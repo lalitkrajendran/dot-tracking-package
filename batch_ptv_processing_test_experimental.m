@@ -175,11 +175,12 @@ for test_index = 1:num_test_folders
         image_mask = double(image_mask);
     end
     
-    ID1_temp = cell(1,num_image_pairs);
-    ID2_temp = cell(1,num_image_pairs);
-    SIZE1_temp = cell(1,num_image_pairs);
-    SIZE2_temp = cell(1,num_image_pairs);
-    Data_temp = cell(1,num_image_pairs);
+    ID1_all = cell(1,num_image_pairs);
+    ID2_all = cell(1,num_image_pairs);
+    SIZE1_all = cell(1,num_image_pairs);
+    SIZE2_all = cell(1,num_image_pairs);
+    tracks_all = cell(1,num_image_pairs);
+    Data_all = cell(1,num_image_pairs);
     
     %% calculate reference dot location from dot positions
     if contains(method, 'apriori')
@@ -281,7 +282,7 @@ for test_index = 1:num_test_folders
     particleIDprops.method = 'blob'; %'dynamic';
     particleIDprops.contrast_ratio = 0;
     for image_pair_index = 1:skip_image_pairs:num_image_pairs %2:num_image_pairs        
-        Data_temp{image_pair_index} = Data;
+        Data_all{image_pair_index} = Data;
         fprintf('Image Pair Number: %d\n', image_pair_index);
         %% calculate dot positions from prana
 
@@ -298,6 +299,16 @@ for test_index = 1:num_test_folders
             im2 = im2 .* image_mask;
         end
 
+        % flip images upside down
+        im1 = flipud(im1);
+        im2 = flipud(im2);
+        
+        % flip numbering of images. this is because in experimental data,
+        % the order is gradient image followed by reference. the
+        % displacement field will be flipped at the end
+        im_temp = im1;
+        im1 = im2;
+        im2 = im_temp;
         %% load correlation results
         
         if strcmp(initialization_method, 'correlation') 
@@ -307,8 +318,8 @@ for test_index = 1:num_test_folders
                 break;
             end
             data = load(fullfile(vectors_directory, vector_filenames(vector_index).name));
-            data.Y = size(im1,1) - data.Y;
-            data.V = -data.V;
+%             data.Y = size(im1,1) - data.Y;
+%             data.V = -data.V;
         end
         
         if strcmp(diameter_estimation_method, 'correlation')
@@ -335,8 +346,8 @@ for test_index = 1:num_test_folders
 %             particleIDprops.method = 'dynamic';
             fprintf('running dot identification\n');
 
-            [ID1_temp{image_pair_index}.p_matrix,ID1_temp{image_pair_index}.peaks,ID1_temp{image_pair_index}.num_p]=particle_ID(im1,particleIDprops);
-            [ID2_temp{image_pair_index}.p_matrix,ID2_temp{image_pair_index}.peaks,ID2_temp{image_pair_index}.num_p]=particle_ID(im2,particleIDprops);
+            [ID1_all{image_pair_index}.p_matrix,ID1_all{image_pair_index}.peaks,ID1_all{image_pair_index}.num_p]=particle_ID(im1,particleIDprops);
+            [ID2_all{image_pair_index}.p_matrix,ID2_all{image_pair_index}.peaks,ID2_all{image_pair_index}.num_p]=particle_ID(im2,particleIDprops);
 
             %% Dot sizing
             fprintf('running dot sizing\n');
@@ -344,28 +355,28 @@ for test_index = 1:num_test_folders
             % pos_prana = cell(1,num_sizing_methods);
             pos_prana = [];
 
-            [SIZE1_temp{image_pair_index}.XYDiameter,SIZE1_temp{image_pair_index}.mapsizeinfo,SIZE1_temp{image_pair_index}.locxy]=particle_sizing(im1,ID1_temp{image_pair_index}.p_matrix,...
-                                ID1_temp{image_pair_index}.num_p,sizeprops);
-            [SIZE2_temp{image_pair_index}.XYDiameter,SIZE2_temp{image_pair_index}.mapsizeinfo,SIZE2_temp{image_pair_index}.locxy]=particle_sizing(im2,ID2_temp{image_pair_index}.p_matrix,...
-                                ID2_temp{image_pair_index}.num_p,sizeprops);
+            [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy]=particle_sizing(im1,ID1_all{image_pair_index}.p_matrix,...
+                                ID1_all{image_pair_index}.num_p,sizeprops);
+            [SIZE2_all{image_pair_index}.XYDiameter,SIZE2_all{image_pair_index}.mapsizeinfo,SIZE2_all{image_pair_index}.locxy]=particle_sizing(im2,ID2_all{image_pair_index}.p_matrix,...
+                                ID2_all{image_pair_index}.num_p,sizeprops);
 
             % remove nan estimates
-            [nan_r, ~] = find(isnan(SIZE1_temp{image_pair_index}.XYDiameter));
-            SIZE1_temp{image_pair_index}.XYDiameter(nan_r, :) = [];
-            SIZE1_temp{image_pair_index}.mapsizeinfo(nan_r, :) = [];
-            SIZE1_temp{image_pair_index}.locxy(nan_r, :) = [];
+            [nan_r, ~] = find(isnan(SIZE1_all{image_pair_index}.XYDiameter));
+            SIZE1_all{image_pair_index}.XYDiameter(nan_r, :) = [];
+            SIZE1_all{image_pair_index}.mapsizeinfo(nan_r, :) = [];
+            SIZE1_all{image_pair_index}.locxy(nan_r, :) = [];
 
-            [nan_r, ~] = find(isnan(SIZE2_temp{image_pair_index}.XYDiameter));
-            SIZE2_temp{image_pair_index}.XYDiameter(nan_r, :) = [];
-            SIZE2_temp{image_pair_index}.mapsizeinfo(nan_r, :) = [];
-            SIZE2_temp{image_pair_index}.locxy(nan_r, :) = [];
+            [nan_r, ~] = find(isnan(SIZE2_all{image_pair_index}.XYDiameter));
+            SIZE2_all{image_pair_index}.XYDiameter(nan_r, :) = [];
+            SIZE2_all{image_pair_index}.mapsizeinfo(nan_r, :) = [];
+            SIZE2_all{image_pair_index}.locxy(nan_r, :) = [];
 
-            X1 = SIZE1_temp{image_pair_index}.XYDiameter(:,1);
-            Y1 = SIZE1_temp{image_pair_index}.XYDiameter(:,2);
+            X1 = SIZE1_all{image_pair_index}.XYDiameter(:,1);
+            Y1 = SIZE1_all{image_pair_index}.XYDiameter(:,2);
             Z1 = zeros(size(X1));
             
-            X2 = SIZE2_temp{image_pair_index}.XYDiameter(:,1);
-            Y2 = SIZE2_temp{image_pair_index}.XYDiameter(:,2);
+            X2 = SIZE2_all{image_pair_index}.XYDiameter(:,1);
+            Y2 = SIZE2_all{image_pair_index}.XYDiameter(:,2);
             Z2 = zeros(size(X2));
         else
             if contains(method, 'apriori')
@@ -385,15 +396,15 @@ for test_index = 1:num_test_folders
                 
                 % identify dots using their known locations on the target
                 if contains(method, 'rays')
-                    [SIZE1_temp{image_pair_index}.XYDiameter,SIZE1_temp{image_pair_index}.mapsizeinfo,SIZE1_temp{image_pair_index}.locxy, SIZE1_temp{image_pair_index}.mapint]=combined_ID_size_apriori_03(im1,pos_ref_rays_1.x, pos_ref_rays_1.y, d_p, subpixel_fit, min_area);
+                    [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy, SIZE1_all{image_pair_index}.mapint]=combined_ID_size_apriori_03(im1,pos_ref_rays_1.x, pos_ref_rays_1.y, d_p, subpixel_fit, min_area);
                 elseif contains(method, 'dots')
 %                     [SIZE1_temp{image_pair_index}.XYDiameter,SIZE1_temp{image_pair_index}.mapsizeinfo,SIZE1_temp{image_pair_index}.locxy, SIZE1_temp{image_pair_index}.mapint]=combined_ID_size_apriori_03(im1,pos_ref_dots.x, pos_ref_dots.y, d_p+2, subpixel_fit, min_area);
 %                     [SIZE1_temp{image_pair_index}.XYDiameter,SIZE1_temp{image_pair_index}.mapsizeinfo,SIZE1_temp{image_pair_index}.locxy, SIZE1_temp{image_pair_index}.mapint]=combined_ID_size_apriori_04(im1,pos_ref_dots.x, pos_ref_dots.y, d_p+2, subpixel_fit, default_iwc, min_area, W_area, W_intensity, W_distance);
-                    [SIZE1_temp{image_pair_index}.XYDiameter,SIZE1_temp{image_pair_index}.peaks, SIZE1_temp{image_pair_index}.mapsizeinfo,SIZE1_temp{image_pair_index}.locxy, SIZE1_temp{image_pair_index}.mapint]=combined_ID_size_apriori_07(im1,pos_ref_dots.x, pos_ref_dots.y, d_p+2, subpixel_fit, default_iwc, min_area, W_area, W_intensity, W_distance);
+                    [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.peaks, SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy, SIZE1_all{image_pair_index}.mapint]=combined_ID_size_apriori_07(im1,pos_ref_dots.x, pos_ref_dots.y, d_p+2, subpixel_fit, default_iwc, min_area, W_area, W_intensity, W_distance);
                 end
 
-                X1 = SIZE1_temp{image_pair_index}.XYDiameter(:,1);
-                Y1 = SIZE1_temp{image_pair_index}.XYDiameter(:,2);
+                X1 = SIZE1_all{image_pair_index}.XYDiameter(:,1);
+                Y1 = SIZE1_all{image_pair_index}.XYDiameter(:,2);
                 %% image 2
 
                 fprintf('im2\n');
@@ -416,10 +427,10 @@ for test_index = 1:num_test_folders
                                 
 %                 [SIZE2_temp{image_pair_index}.XYDiameter,SIZE2_temp{image_pair_index}.mapsizeinfo,SIZE2_temp{image_pair_index}.locxy, SIZE2_temp{image_pair_index}.mapint]=combined_ID_size_apriori_03(im2, X2_est, Y2_est, d_p+2, subpixel_fit, min_area);
 %                 [SIZE2_temp{image_pair_index}.XYDiameter,SIZE2_temp{image_pair_index}.mapsizeinfo,SIZE2_temp{image_pair_index}.locxy, SIZE2_temp{image_pair_index}.mapint]=combined_ID_size_apriori_04(im2, X2_est, Y2_est, d_p+2, subpixel_fit, default_iwc, min_area, W_area, W_intensity, W_distance);
-                [SIZE2_temp{image_pair_index}.XYDiameter,SIZE2_temp{image_pair_index}.peaks,SIZE2_temp{image_pair_index}.mapsizeinfo,SIZE2_temp{image_pair_index}.locxy, SIZE2_temp{image_pair_index}.mapint]=combined_ID_size_apriori_07(im2, X2_est, Y2_est, d_p+2, subpixel_fit, default_iwc, min_area, W_area, W_intensity, W_distance);
+                [SIZE2_all{image_pair_index}.XYDiameter,SIZE2_all{image_pair_index}.peaks,SIZE2_all{image_pair_index}.mapsizeinfo,SIZE2_all{image_pair_index}.locxy, SIZE2_all{image_pair_index}.mapint]=combined_ID_size_apriori_07(im2, X2_est, Y2_est, d_p+2, subpixel_fit, default_iwc, min_area, W_area, W_intensity, W_distance);
                 
-                X2 = SIZE2_temp{image_pair_index}.XYDiameter(:,1);
-                Y2 = SIZE2_temp{image_pair_index}.XYDiameter(:,2);
+                X2 = SIZE2_all{image_pair_index}.XYDiameter(:,1);
+                Y2 = SIZE2_all{image_pair_index}.XYDiameter(:,2);
             else
                 fprintf('unknown input\n');
                 keyboard;
@@ -444,10 +455,10 @@ for test_index = 1:num_test_folders
 %         Y2_est = Y1 + v_guess;
         Z2_est = Z1;
 
-        d1 = SIZE1_temp{image_pair_index}.XYDiameter(:,3);
-        d2 = SIZE2_temp{image_pair_index}.XYDiameter(:,3);
-        I1 = SIZE1_temp{image_pair_index}.XYDiameter(:,4);
-        I2 = SIZE2_temp{image_pair_index}.XYDiameter(:,4);
+        d1 = SIZE1_all{image_pair_index}.XYDiameter(:,3);
+        d2 = SIZE2_all{image_pair_index}.XYDiameter(:,3);
+        I1 = SIZE1_all{image_pair_index}.XYDiameter(:,4);
+        I2 = SIZE2_all{image_pair_index}.XYDiameter(:,4);
 
         weights = [distance_weight, size_weight, intensity_weight]; %[1, 0, 0];
 
@@ -456,7 +467,7 @@ for test_index = 1:num_test_folders
         % run weighted nearest neighbors
         %track the particles in the image pair using the 3D weighted
         %nearest neighbor tracking method
-        [tracks_temp{image_pair_index}]=weighted_nearest_neighbor3D(X1,X2,X2_est,Y1,Y2,Y2_est,...
+        [tracks_all{image_pair_index}]=weighted_nearest_neighbor3D(X1,X2,X2_est,Y1,Y2,Y2_est,...
             Z1,Z2,Z2_est,d1,d2,I1,I2,weights,s_radius);
 
         %% correct sub-pixel estimate of displacement using a correlation based estimate
@@ -464,7 +475,7 @@ for test_index = 1:num_test_folders
             fprintf('Performing Correlation Correction\n');
             % get final sub-pixel displacement estimate by cross-correlation intensity
             % maps of the dots
-            num_tracks = size(tracks_temp{image_pair_index}, 1);
+            num_tracks = size(tracks_all{image_pair_index}, 1);
             U = zeros(num_tracks,1);
             V = zeros(num_tracks,1);
             for track_index = 1:num_tracks
@@ -472,17 +483,41 @@ for test_index = 1:num_test_folders
                     fprintf('Track: %d of %d\n', track_index, num_tracks);
                 end
     %             fprintf('track number: %d\n', track_index);
-                track_current = tracks_temp{image_pair_index}(track_index, :);
+                track_current = tracks_all{image_pair_index}(track_index, :);
 %                 [U(track_index), V(track_index)] = cross_correlate_dots(im1, im2, track_current(1), track_current(2), track_current(3), track_current(4), track_current(7), track_current(8), correlation_correction_algorithm, subpixel_fit);            
 %                 [U(track_index), V(track_index)] = cross_correlate_dots_02(im1, im2, SIZE1_temp{image_pair_index}, SIZE2_temp{image_pair_index}, track_current, correlation_correction_algorithm, correlation_correction_subpixel_fit);            
 %                 [U(track_index), V(track_index)] = cross_correlate_dots_03(SIZE1_temp{image_pair_index}, SIZE2_temp{image_pair_index}, track_current, correlation_correction_algorithm, correlation_correction_subpixel_fit);            
 %                 [U(track_index), V(track_index)] = cross_correlate_dots_04(SIZE1_temp{image_pair_index}, SIZE2_temp{image_pair_index}, track_current, correlation_correction_algorithm, correlation_correction_subpixel_fit);            
 %                 [U(track_index), V(track_index)] = cross_correlate_dots_05(SIZE1_temp{image_pair_index}, SIZE2_temp{image_pair_index}, track_current, correlation_correction_algorithm, correlation_correction_subpixel_fit, zero_mean, min_sub);            
-                [U(track_index), V(track_index)] = cross_correlate_dots_06(im1, im2, SIZE1_temp{image_pair_index}, SIZE2_temp{image_pair_index}, track_current, correlation_correction_algorithm, correlation_correction_subpixel_fit, zero_mean, min_sub);            
+                [U(track_index), V(track_index)] = cross_correlate_dots_06(im1, im2, SIZE1_all{image_pair_index}, SIZE2_all{image_pair_index}, track_current, correlation_correction_algorithm, correlation_correction_subpixel_fit, zero_mean, min_sub);            
             end
             % append results to track
-            tracks_temp{image_pair_index} = [tracks_temp{image_pair_index}, U, V];
+            tracks_all{image_pair_index} = [tracks_all{image_pair_index}, U, V];
         end
+        
+        %% flip tracking results to account for reordering reference and gradient images
+        tracks_temp = tracks_all{image_pair_index};
+        % swap x positions
+        tracks_temp(:, [1, 2]) = tracks_temp(:, [2, 1]);
+        % swap y positions
+        tracks_temp(:, [3, 4]) = tracks_temp(:, [4, 3]);
+        % swap z positions
+        tracks_temp(:, [5, 6]) = tracks_temp(:, [6, 5]);
+        % swap diameters
+        tracks_temp(:, [7, 8]) = tracks_temp(:, [8, 7]);
+        % swap intensities
+        tracks_temp(:, [9, 10]) = tracks_temp(:, [10, 9]);
+        % swap particle ids
+        tracks_temp(:, [11, 12]) = tracks_temp(:, [12, 11]);
+        
+        if correlation_correction
+            % change sign on displacements from correlation correction
+            tracks_temp(:, 14) = -tracks_temp(:, 14);
+            tracks_temp(:, 15) = -tracks_temp(:, 15);
+        end
+        
+        % save to original data structure
+        tracks_temp{image_pair_index} = tracks_temp;
         
         %% save tracks
         fprintf('Saving the tracks\n');
@@ -495,7 +530,7 @@ for test_index = 1:num_test_folders
         % save tracking results
 %         save_filename = fullfile(save_filepath, ['ptv_bos_Track_' num2str(image_pair_index*2 - 1, ['%0' Data_temp{image_pair_index}.imzeros 'd']), '.mat']);
         save_filename = fullfile(save_filepath, ['ptv_bos_Track_' num2str(image_pair_index*2 - 1, '%05d'), '.mat']);
-        tracks = tracks_temp{image_pair_index};
+        tracks = tracks_all{image_pair_index};
         save(save_filename, 'tracks');
     end
 end

@@ -240,7 +240,6 @@ for test_index = 1:num_test_folders
         % load a sample image to get its dimensions
         im = imread(fullfile(current_image_directory, image_filenames(1).name));
         [NR_im, NC_im] = size(im);
-        
 %         pos_ref_dots.y = NR_im - pos_ref_dots.y;
         
         % remove points outside FOV
@@ -497,28 +496,28 @@ for test_index = 1:num_test_folders
         end
         
         %% flip tracking results to account for reordering reference and gradient images
-        tracks_temp = tracks_all{image_pair_index};
+        tracks_all = tracks_all{image_pair_index};
         % swap x positions
-        tracks_temp(:, [1, 2]) = tracks_temp(:, [2, 1]);
+        tracks_all(:, [1, 2]) = tracks_all(:, [2, 1]);
         % swap y positions
-        tracks_temp(:, [3, 4]) = tracks_temp(:, [4, 3]);
+        tracks_all(:, [3, 4]) = tracks_all(:, [4, 3]);
         % swap z positions
-        tracks_temp(:, [5, 6]) = tracks_temp(:, [6, 5]);
+        tracks_all(:, [5, 6]) = tracks_all(:, [6, 5]);
         % swap diameters
-        tracks_temp(:, [7, 8]) = tracks_temp(:, [8, 7]);
+        tracks_all(:, [7, 8]) = tracks_all(:, [8, 7]);
         % swap intensities
-        tracks_temp(:, [9, 10]) = tracks_temp(:, [10, 9]);
+        tracks_all(:, [9, 10]) = tracks_all(:, [10, 9]);
         % swap particle ids
-        tracks_temp(:, [11, 12]) = tracks_temp(:, [12, 11]);
+        tracks_all(:, [11, 12]) = tracks_all(:, [12, 11]);
         
         if correlation_correction
             % change sign on displacements from correlation correction
-            tracks_temp(:, 14) = -tracks_temp(:, 14);
-            tracks_temp(:, 15) = -tracks_temp(:, 15);
+            tracks_all(:, 14) = -tracks_all(:, 14);
+            tracks_all(:, 15) = -tracks_all(:, 15);
         end
         
         % save to original data structure
-        tracks_temp{image_pair_index} = tracks_temp;
+        tracks_all{image_pair_index} = tracks_all;
         
         %% save tracks
         fprintf('Saving the tracks\n');

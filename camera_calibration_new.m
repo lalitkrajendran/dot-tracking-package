@@ -1006,6 +1006,7 @@ figure(1);
 imshow(imadjust(I));
 % imshow(I);
 % I(I<mean(I(:)))=0;
+keyboard;
 
 % This displays a title telling the user to select the origin grid point
 title('Select origin grid point.');

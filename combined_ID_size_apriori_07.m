@@ -121,7 +121,7 @@ function [XYDiameter, peaks, mapsizeinfo, locxy, mapint]=combined_ID_size_aprior
         im_p = im(r_min:r_max, c_min:c_max);
         mapint{p} = double(im_p);
         locxy(p,:) = [c_min, r_min];
-        mapsizeinfo(p,:) = [r_max - r_min, c_max - c_min];
+        mapsizeinfo(p,:) = [r_max - r_min + 1, c_max - c_min + 1];
         
         % if all pixels are zero, then continue
         if(sum(im_p) == 0)

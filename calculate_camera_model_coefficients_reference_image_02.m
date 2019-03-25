@@ -9,13 +9,15 @@ dbstop if error
 read_calibration_data = false;
 
 % top_image_directory = fullfile('/home/shannon/c/aether/Projects/BOS/spark-induced-flow/analysis/data/2018-08-20/', '90_450_0_1');
-top_image_directory = '/home/shannon/c/aether/Projects/BOS/nozzle/analysis/data/images/2018-10-05/0_25mm/allpsi/';
+% top_image_directory = '/home/shannon/c/aether/Projects/BOS/nozzle/analysis/data/images/2018-10-05/0_25mm/allpsi/';
 % top_image_directory = '/home/shannon/c/aether/Projects/BOS/nozzle/analysis/data/images/2018-10-11/0_15mm/allpsi/';
 % top_image_directory = '/home/shannon/c/aether/Projects/BOS/nozzle/analysis/data/images/2018-10-11/0_1mm/allpsi/';
+% top_image_directory = '/home/shannon/c/aether/Projects/BOS/arms-supersonic-wind-tunnel/analysis/data/2019-02-25/wedge-front/';
+top_image_directory = '/scratch/shannon/c/aether/Projects/BOS/arms-supersonic-wind-tunnel/analysis/data/2019-03-14/wedge/0_25mm/';
 
-save_calibration_data = false;
-save_camera_model = false;
-save_filepath = top_image_directory;
+save_calibration_data = true;
+save_camera_model = true;
+save_filepath = fullfile(top_image_directory, 'calibration');
 
 if read_calibration_data
     save_filename = 'calibration_data.mat';
@@ -25,7 +27,7 @@ if read_calibration_data
     calibration_data.y_pixel_number = 309;
 else
     % load sample job file and adjust parameters
-    sample_job_filename = '/home/shannon/c/aether/Projects/BOS/error-analysis/analysis/data/sample-job-files/sample-stereo-calibration-job.mat';
+    sample_job_filename = '/scratch/shannon/c/aether/Projects/BOS/error-analysis/analysis/data/sample-job-files/sample-stereo-calibration-job.mat';
     sample_job = load(sample_job_filename);
 
     % extract the calibration job
@@ -33,8 +35,9 @@ else
 
     % set calibration images
 %     calibration_image_directory = fullfile(top_image_directory, 'test1', 'processing', 'average-ref-cropped');
-    calibration_image_directory = fullfile(top_image_directory, 'test1', 'processing', 'single-ref');
-    [files, num_files] = get_directory_listing(calibration_image_directory, 'im*.tif');
+%     calibration_image_directory = fullfile(top_image_directory, 'test1', 'processing', 'single-ref');
+    calibration_image_directory = fullfile(top_image_directory, 'calibration');
+    [files, ~] = get_directory_listing(calibration_image_directory, 'im*.tif');
 
     num_files = 1;
     num_cameras = 1;
@@ -50,10 +53,10 @@ else
     caljob.JOBFILE.CalImageList = caljob.calimagelist;
     caljob.JOBFILE.Plane_Numbers_List = 1:num_files;
     caljob.JOBFILE.Z_Grid_Start = 0;
-    caljob.JOBFILE.Plane_Spacing = -5;
-    caljob.JOBFILE.Grid_Point_Diameter = 0.1; % 20e-3;
-    caljob.JOBFILE.X_Grid_Spacing = 3*2*0.1; %2*180e-3;
-    caljob.JOBFILE.Y_Grid_Spacing = 3*2*0.1; %2*180e-3;
+    caljob.JOBFILE.Plane_Spacing = 0;
+    caljob.JOBFILE.Grid_Point_Diameter = 1; % 20e-3;
+    caljob.JOBFILE.X_Grid_Spacing = 2*caljob.JOBFILE.Grid_Point_Diameter; %2*180e-3;
+    caljob.JOBFILE.Y_Grid_Spacing = 2*caljob.JOBFILE.Grid_Point_Diameter; %2*180e-3;
 
     % load a sample image
     im = imread(fullfile(files(1).folder, files(1).name));

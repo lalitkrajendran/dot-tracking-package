@@ -72,8 +72,8 @@ function run_dot_tracking_v2(io, id, sizing, tracking)
         im2 = flipud(im2);
         image_mask = flipud(image_mask);
         
-        if strcmp(io.image_type, 'synthetic')
-            % flip numbering of images if it is synthetic. this is because in experimental data,
+        if strcmp(io.image_type, 'experimental')
+            % flip numbering of images if it is experimental. this is because in experimental data,
             % the order is gradient image followed by reference. the
             % displacement field will be flipped at the end to ensure
             % consistency.
@@ -108,8 +108,14 @@ function run_dot_tracking_v2(io, id, sizing, tracking)
             particleIDprops.method = id.segmentation_method; %'dynamic';
             particleIDprops.contrast_ratio = 0;
             
-            % perform dot identification for frame 1
-            [ID1_all{image_pair_index}.p_matrix,ID1_all{image_pair_index}.peaks,ID1_all{image_pair_index}.num_p]=particle_ID(im1,particleIDprops);
+            % perform dot identification for frame 1 (only for the first
+            % image pair as all reference images are identical)
+            if image_pair_index == 1
+                [ID1_all{image_pair_index}.p_matrix,ID1_all{image_pair_index}.peaks,ID1_all{image_pair_index}.num_p]=particle_ID(im1,particleIDprops);
+            else
+                ID1_all{image_pair_index} = ID1_all{1};
+            end
+            
             % perform dot identification for frame 2
             [ID2_all{image_pair_index}.p_matrix,ID2_all{image_pair_index}.peaks,ID2_all{image_pair_index}.num_p]=particle_ID(im2,particleIDprops);
                 
@@ -123,29 +129,38 @@ function run_dot_tracking_v2(io, id, sizing, tracking)
             sizeprops.errors = double(sizing.default_iwc); % retain IWC estimate if gaussian fit fails
             sizeprops.method = sizing.centroid_subpixel_fit;
             
-            % perform dot sizing for frame 1
-            [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy]=particle_sizing(im1,ID1_all{image_pair_index}.p_matrix,...
-                                ID1_all{image_pair_index}.num_p,sizeprops);
+            % perform dot sizing for frame 1 (only for the first
+            % image pair as all reference images are identical)
+            if image_pair_index == 1
+                [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy]=particle_sizing(im1,ID1_all{image_pair_index}.p_matrix,...
+                                    ID1_all{image_pair_index}.num_p,sizeprops);
+                                
+                % remove nan estimates from sizing results for frame 1
+                [nan_r, ~] = find(isnan(SIZE1_all{image_pair_index}.XYDiameter));
+                SIZE1_all{image_pair_index}.XYDiameter(nan_r, :) = [];
+                SIZE1_all{image_pair_index}.mapsizeinfo(nan_r, :) = [];
+                SIZE1_all{image_pair_index}.locxy(nan_r, :) = [];
+                
+                % extract x,y co-ordinates of identified dots in frame 2
+                X1 = SIZE1_all{image_pair_index}.XYDiameter(:,1);
+                Y1 = SIZE1_all{image_pair_index}.XYDiameter(:,2);
+                Z1 = zeros(size(X1));
+                
+            else
+                SIZE1_all{image_pair_index} = SIZE1_all{1};
+            end
+            
             % perform dot sizing for frame 2
             [SIZE2_all{image_pair_index}.XYDiameter,SIZE2_all{image_pair_index}.mapsizeinfo,SIZE2_all{image_pair_index}.locxy]=particle_sizing(im2,ID2_all{image_pair_index}.p_matrix,...
                                 ID2_all{image_pair_index}.num_p,sizeprops);
 
-            % remove nan estimates from sizing resluts for frame 1
-            [nan_r, ~] = find(isnan(SIZE1_all{image_pair_index}.XYDiameter));
-            SIZE1_all{image_pair_index}.XYDiameter(nan_r, :) = [];
-            SIZE1_all{image_pair_index}.mapsizeinfo(nan_r, :) = [];
-            SIZE1_all{image_pair_index}.locxy(nan_r, :) = [];
 
-            % remove nan estimates from sizing resluts for frame 1
+            % remove nan estimates from sizing results for frame 2
             [nan_r, ~] = find(isnan(SIZE2_all{image_pair_index}.XYDiameter));
             SIZE2_all{image_pair_index}.XYDiameter(nan_r, :) = [];
             SIZE2_all{image_pair_index}.mapsizeinfo(nan_r, :) = [];
             SIZE2_all{image_pair_index}.locxy(nan_r, :) = [];
 
-            % extract x,y co-ordinates of identified dots in frame 1
-            X1 = SIZE1_all{image_pair_index}.XYDiameter(:,1);
-            Y1 = SIZE1_all{image_pair_index}.XYDiameter(:,2);
-            Z1 = zeros(size(X1));
             
             % extract x,y co-ordinates of identified dots in frame 2
             X2 = SIZE2_all{image_pair_index}.XYDiameter(:,1);
@@ -209,13 +224,20 @@ function run_dot_tracking_v2(io, id, sizing, tracking)
             % set minimum area for a set of pixels to be considered a dot
             min_area = 0.5 * median(d_p)^2;
             
-            % identify and size dots using their known locations on the target
-            [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.peaks, SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy, SIZE1_all{image_pair_index}.mapint]=combined_ID_size_apriori_07(im1,pos_ref_dots.x, pos_ref_dots.y, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);
+            % identify and size dots using their known locations on the
+            % target (only for first image pair, as all reference images
+            % are identical)
+            if image_pair_index == 1
+                [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.peaks, SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy, SIZE1_all{image_pair_index}.mapint]=combined_ID_size_apriori_07(im1,pos_ref_dots.x, pos_ref_dots.y, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);                
 
-            % extract co-ordinates
-            X1 = SIZE1_all{image_pair_index}.XYDiameter(:,1);
-            Y1 = SIZE1_all{image_pair_index}.XYDiameter(:,2);
-            Z1 = zeros(size(X1));
+                % extract co-ordinates
+                X1 = SIZE1_all{image_pair_index}.XYDiameter(:,1);
+                Y1 = SIZE1_all{image_pair_index}.XYDiameter(:,2);
+                Z1 = zeros(size(X1));
+            else
+                SIZE1_all{image_pair_index} = SIZE1_all{1};
+            end
+            
             %% frame 2
             
             fprintf('im2\n');
@@ -305,7 +327,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking)
         
         %% flip tracking results to account for reordering reference and gradient images
         
-        if strcmp(io.image_type, 'synthetic')
+        if strcmp(io.image_type, 'experimental')
             tracks_temp = tracks_all{image_pair_index};
             % swap x positions
             tracks_temp(:, [1, 2]) = tracks_all{image_pair_index}(:, [2, 1]);
@@ -328,6 +350,17 @@ function run_dot_tracking_v2(io, id, sizing, tracking)
             
             % save to original data structure
             tracks_all{image_pair_index} = tracks_temp;
+            
+            % flip id results
+            ID1_temp = ID1_all{image_pair_index};
+            ID1_all{image_pair_index} = ID2_all{image_pair_index};
+            ID2_all{image_pair_index} = ID1_temp;
+            
+            % flip sizing results
+            SIZE1_temp = SIZE1_all{image_pair_index};
+            SIZE1_all{image_pair_index} = SIZE2_all{image_pair_index};
+            SIZE2_all{image_pair_index} = SIZE1_temp;            
+            
         end
         
         %% save results to file

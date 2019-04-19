@@ -1,4 +1,4 @@
-function run_dot_tracking_v2(io, id, sizing, tracking)
+function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
     %% get directory listings for images, vectors and diameters
 
     % get directory listing for images
@@ -37,6 +37,48 @@ function run_dot_tracking_v2(io, id, sizing, tracking)
     mkdir(track_save_directory);                
     save(fullfile(track_save_directory, 'track_params.mat'), 'tracking');
     
+    %% calculate dot positions from prior information
+    
+    % load calibration data
+    if strcmp(id.camera_model, 'soloff')
+        calibration_results = load(fullfile(id.camera_model_directory, 'calibration_data.mat'));
+        experimental_parameters.bos_pattern.X_Min = min(calibration_results.calibration_data.x_world_full{1}) * 1e3;
+        experimental_parameters.bos_pattern.Y_Min = min(calibration_results.calibration_data.y_world_full{1}) * 1e3;
+    else
+        experimental_parameters.bos_pattern.X_Min = 0; %-1.5e3; %0;
+        experimental_parameters.bos_pattern.Y_Min = 0; %-3e3; %0;
+    end
+    
+    % calculate expected field of view based on the magnification and the
+    % size of the camera sensor
+    field_of_view = experimental_parameters.camera_design.x_pixel_number * experimental_parameters.camera_design.pixel_pitch / experimental_parameters.lens_design.magnification;
+    experimental_parameters.bos_pattern.dot_number = round(field_of_view/experimental_parameters.bos_pattern.dot_spacing) * 1;
+    
+    % create array of x,y co-ordinates to describe the dot pattern
+    x_array = experimental_parameters.bos_pattern.X_Min + experimental_parameters.bos_pattern.dot_spacing * (0:experimental_parameters.bos_pattern.dot_number);
+    y_array = experimental_parameters.bos_pattern.Y_Min + experimental_parameters.bos_pattern.dot_spacing * (0:experimental_parameters.bos_pattern.dot_number);    
+    [positions.x, positions.y] = meshgrid(x_array, y_array);
+    
+    % load camera mapping function coefficients
+    if strcmp(id.camera_model, 'soloff')
+        mapping_coefficients = load(fullfile(id.camera_model_directory, ['camera_model_type=' num2str(id.order_z) '.mat']));
+    else
+        mapping_coefficients = [];
+    end
+    
+    % calculate reference dot locations
+    fprintf('calculating reference dot locations\n');
+    [pos_ref_dots.x, pos_ref_dots.y] = calculate_reference_dot_locations_new(positions, experimental_parameters, id.camera_model, mapping_coefficients, id.order_z, id.starting_index_x, id.starting_index_y);
+        
+    % remove points outside FOV
+    indices = pos_ref_dots.x < 1 | pos_ref_dots.x > experimental_parameters.camera_design.x_pixel_number-1 | pos_ref_dots.y < 1 | pos_ref_dots.y > experimental_parameters.camera_design.y_pixel_number-1;
+    pos_ref_dots.x(indices) = [];
+    pos_ref_dots.y(indices) = [];
+    num_dots_ref = numel(pos_ref_dots.x); % - sum(indices);
+        
+    id.x_ref = pos_ref_dots.x;
+    id.y_ref = pos_ref_dots.y;
+
     %% load and process image pairs
 
     % initialize data structures to hold results

@@ -95,6 +95,8 @@ function [Uc, Vc] = cross_correlate_dots_06(im1, im2, size_1, size_2, track, cor
         peak_locator = 2;        
     elseif strcmp(subpixel_fit, 'lsg')
         peak_locator = 3;
+    elseif strcmp(subpixel_fit, 'clsg')
+        peak_locator = 4;
     else
         fprintf('unknown subpixel fit. exiting.\n');
     end

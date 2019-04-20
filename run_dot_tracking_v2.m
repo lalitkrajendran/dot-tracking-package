@@ -384,7 +384,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             % swap particle ids
             tracks_temp(:, [11, 12]) = tracks_all{image_pair_index}(:, [12, 11]);
             
-            if correlation_correction.perform_correlation_correction
+            if tracking.perform_correlation_correction
                 % change sign on displacements from correlation correction
                 tracks_temp(:, 14) = -tracks_all{image_pair_index}(:, 14);
                 tracks_temp(:, 15) = -tracks_all{image_pair_index}(:, 15);

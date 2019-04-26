@@ -119,7 +119,7 @@ function [u_val, v_val, val, r0_u, r0_v] = uod_ptv(x, y, u, v, replace_vectors, 
         if r0_u(track_index) > residual_threshold
             val(track_index) = 1;
             if replace_vectors
-                F_U = scatteredInterpolant(xi, yi, Ui);
+                F_U = scatteredInterpolant(xi, yi, Ui, 'natural');
                 u_val(track_index) = F_U(x0, y0);
             else
                 u_val(track_index) = NaN;
@@ -131,7 +131,7 @@ function [u_val, v_val, val, r0_u, r0_v] = uod_ptv(x, y, u, v, replace_vectors, 
         if r0_v(track_index) > residual_threshold
             val(track_index) = 1;
             if replace_vectors
-                F_V = scatteredInterpolant(xi, yi, Vi);
+                F_V = scatteredInterpolant(xi, yi, Vi, 'natural');
                 v_val(track_index) = F_V(x0, y0);
             else
                 v_val(track_index) = NaN;                

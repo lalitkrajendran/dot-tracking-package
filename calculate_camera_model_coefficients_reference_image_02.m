@@ -64,7 +64,7 @@ function calculate_camera_model_coefficients_reference_image_02(calibration_imag
         caljob.y_pixel_number = NR;
 
         % select control points
-        [calibration_data, ~]=camera_calibration_new(caljob.JOBFILE);
+        [calibration_data, calibration_plane_data]=camera_calibration_new(caljob.JOBFILE);
 
         if save_calibration_data
             % save the object and image co-ordinates of the points on the calibration

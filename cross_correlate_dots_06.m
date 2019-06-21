@@ -79,8 +79,25 @@ function [Uc, Vc] = cross_correlate_dots_06(im1, im2, size_1, size_2, track, cor
     filter_diameter = 2.8;
 
     % particle diameter
-    particle_diameter = 0.5 * (size_1.XYDiameter(p_1,3) + size_2.XYDiameter(p_2,3));
-    
+%     if ~isnan(size_1.XYDiameter(p_1, 3)) && ~isnan(size_2.XYDiameter(p_2, 3))
+%         particle_diameter = 0.5 * (size_1.XYDiameter(p_1,3) + size_2.XYDiameter(p_2,3));
+%     elseif isnan(size_1.XYDiameter(p_1, 3)) && ~isnan(size_2.XYDiameter(p_2, 3))
+%         particle_diameter = size_2.XYDiameter(p_2,3);
+%     elseif ~isnan(size_1.XYDiameter(p_1, 3)) && isnan(size_2.XYDiameter(p_2, 3))
+%         particle_diameter = size_1.XYDiameter(p_2,3);
+%     else
+%         Uc = NaN;
+%         Vc = NaN;
+%         return;
+%     end
+
+    if isnan(size_1.XYDiameter(p_1, 3)) || isnan(size_2.XYDiameter(p_2, 3))
+        Uc = NaN;
+        Vc = NaN;
+        return;
+    else
+        particle_diameter = 0.5 * (size_1.XYDiameter(p_1,3) + size_2.XYDiameter(p_2,3));
+    end
 %     % zero mean images?
 %     if strcmp(correlation_algorithm, 'dcc')
 %         zero_mean = 0;

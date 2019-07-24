@@ -40,17 +40,18 @@ magnification = dot_diameter_object/dot_diameter_image; %33;
 % size of the camera sensor (um)
 experimental_parameters.camera_design.pixel_pitch = 20.8; %20;
 % number of pixels on the camera
-experimental_parameters.camera_design.x_pixel_number = 1024; %1000;
-experimental_parameters.camera_design.y_pixel_number = 1024; %309;
+experimental_parameters.camera_design.x_pixel_number = 512; %1000;
+experimental_parameters.camera_design.y_pixel_number = 352; %309;
 % camera angles (deg.)
 experimental_parameters.camera_design.x_camera_angle = 0;
 experimental_parameters.camera_design.y_camera_angle = 0;
 % distance between camera and the dot target (um)
-experimental_parameters.lens_design.object_distance = 10.5 * 2.54 * 10e3;
+% (not required if camera model is soloff)
+experimental_parameters.lens_design.object_distance = NaN; 
 % non-dimensional magnification
 experimental_parameters.lens_design.magnification = experimental_parameters.camera_design.pixel_pitch/magnification; %6.45/28.63; %1.3;
 % spacing between dots (um)
-experimental_parameters.bos_pattern.dot_spacing = 84; %dot_spacing * magnification; % 2*150; %2*250; %180;
+experimental_parameters.bos_pattern.dot_spacing = dot_spacing_image * magnification; %dot_spacing * magnification; % 2*150; %2*250; %180;
 
 %% Processing settings
 

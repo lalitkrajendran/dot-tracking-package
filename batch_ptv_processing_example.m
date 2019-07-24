@@ -28,11 +28,14 @@ pulse_voltage = 400;
 pulse_width = 40;
 
 % dot diameter in the image plane (pix.)
-dot_diameter = 7;
+dot_diameter_image = 4;
+% dot diameter in the object plane (mm)
+dot_diameter_object = 0.5;
+
 % dot spacing in the image plane (pix.)
-dot_spacing = 8;
+dot_spacing_image = 1;
 % magnification (um/pix.)
-magnification = 10.5; %33;
+magnification = dot_diameter_object/dot_diameter_image; %33;
 
 % size of the camera sensor (um)
 experimental_parameters.camera_design.pixel_pitch = 20.8; %20;
@@ -109,7 +112,7 @@ sizing.default_iwc = false;
 % ------------------------------------------
 
 % approximate dot diameter [pix.]
-id.dot_diameter = dot_diameter;
+id.dot_diameter = dot_diameter_image;
 % minimum area for a set of pixels to be considered a dot [pix.^2]
 id.min_area = 0.5 * id.dot_diameter^2;
 % camera model to use for projecting known dot positions from object space

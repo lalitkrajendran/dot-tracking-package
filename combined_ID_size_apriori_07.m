@@ -148,9 +148,15 @@ function [XYDiameter, peaks, mapsizeinfo, locxy, mapint]=combined_ID_size_aprior
                 % ensure no duplicate peaks
                 peak_indices = peaks_crop(peaks_crop(:) > 0);            
                 if length(unique(peak_indices)) < length(peak_indices)
+                    % detect unique peaks
                     [~, ind] = unique(peaks_crop(peaks_crop>0));
+                    % detect repeating peaks
                     duplicate_ind = setdiff(1:size(peaks_crop(peaks_crop>0), 1), ind);
-                    peaks_crop(r_peak(duplicate_ind), c_peak(duplicate_ind)) = 0;
+                    % zero out (remove) repeating peaks
+                    for ctr = 1:numel(duplicate_ind)
+                        peaks_crop(r_peak(duplicate_ind(ctr)), c_peak(duplicate_ind(ctr))) = 0;
+                    end
+%                     peaks_crop(r_peak(duplicate_ind), c_peak(duplicate_ind)) = 0;
 
                     % find new peak locations if duplicates were identified and
                     % removed

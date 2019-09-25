@@ -271,10 +271,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             else
                 d_p = id.dot_diameter*ones(size(pos_ref_dots.x));
             end
-            
-            % set minimum area for a set of pixels to be considered a dot
-            min_area = 0.5 * median(d_p)^2;
-            
+                        
             % identify and size dots using their known locations on the
             % target (only for first image pair, as all reference images
             % are identical)

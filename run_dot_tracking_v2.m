@@ -103,6 +103,15 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         im1 = double(im1);
         im2 = double(im2);
         
+        % perform minimum subtraction if required
+        if id.minimum_subtraction
+            im1 = im1 - id.minimum_intensity_level;
+            im2 = im2 - id.minimum_intensity_level;
+            
+            im1(im1 < 0) = 0;
+            im2(im2 < 0) = 0;
+        end
+            
         % mask images
         if io.image_masking
             im1 = im1 .* image_mask;

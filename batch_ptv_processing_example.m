@@ -103,6 +103,11 @@ id.intensity_threshold_current = 500;
 % 'standard')
 id.identification_method = 'apriori';
 
+% minimum subtraction (true/false)
+id.minimum_subtraction = false; %true;
+% intensity level for subtraction 
+id.minimum_intensity_level = 3.5e4;
+
 % subpixel fit ('tpg', 'lsg')
 sizing.centroid_subpixel_fit = 'iwc'; %'clsg';
 % default to iwc if the gaussian fit fails? (true/false)

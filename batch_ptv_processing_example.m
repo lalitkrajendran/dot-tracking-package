@@ -35,7 +35,7 @@ dot_diameter_object = 0.5;
 % dot spacing in the image plane (pix.)
 dot_spacing_image = 1;
 % magnification (um/pix.)
-magnification = dot_diameter_object/dot_diameter_image; %33;
+magnification = dot_diameter_object * 1e3/dot_diameter_image; %33;
 
 % size of the camera sensor (um)
 experimental_parameters.camera_design.pixel_pitch = 20.8; %20;

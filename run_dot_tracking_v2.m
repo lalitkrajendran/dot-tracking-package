@@ -107,13 +107,13 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         if io.image_masking
             im1 = im1 .* image_mask;
             im2 = im2 .* image_mask;
+            image_mask = flipud(image_mask);
         end
 
         % flip images upside down
         im1 = flipud(im1);
         im2 = flipud(im2);
-        image_mask = flipud(image_mask);
-        
+                
         if strcmp(io.image_type, 'experimental')
             % flip numbering of images if it is experimental. this is because in experimental data,
             % the order is gradient image followed by reference. the

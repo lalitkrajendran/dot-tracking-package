@@ -14,7 +14,7 @@ function [X_grid, Y_grid, dU_dx, dU_dy, dV_dx, dV_dy] = calculate_displacement_g
 % Lalit Rajendran (lrajendr@purdue.edu)
 
     %% interpolate tracks
-    [X_grid, Y_grid, U_grid, V_grid] = interpolate_tracks(X, Y, U, V, dot_spacing);
+    [X_grid, Y_grid, U_grid, V_grid] = interpolate_tracks(X, Y, U, V, grid_spacing);
     
     %% calculate displacements gradients
         

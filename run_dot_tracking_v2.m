@@ -103,17 +103,26 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         im1 = double(im1);
         im2 = double(im2);
         
+        % perform minimum subtraction if required
+        if id.minimum_subtraction
+            im1 = im1 - id.minimum_intensity_level;
+            im2 = im2 - id.minimum_intensity_level;
+            
+            im1(im1 < 0) = 0;
+            im2(im2 < 0) = 0;
+        end
+            
         % mask images
         if io.image_masking
             im1 = im1 .* image_mask;
             im2 = im2 .* image_mask;
+            image_mask = flipud(image_mask);
         end
 
         % flip images upside down
         im1 = flipud(im1);
         im2 = flipud(im2);
-        image_mask = flipud(image_mask);
-        
+                
         if strcmp(io.image_type, 'experimental')
             % flip numbering of images if it is experimental. this is because in experimental data,
             % the order is gradient image followed by reference. the
@@ -262,10 +271,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             else
                 d_p = id.dot_diameter*ones(size(pos_ref_dots.x));
             end
-            
-            % set minimum area for a set of pixels to be considered a dot
-            min_area = 0.5 * median(d_p)^2;
-            
+                        
             % identify and size dots using their known locations on the
             % target (only for first image pair, as all reference images
             % are identical)

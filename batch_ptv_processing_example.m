@@ -28,26 +28,30 @@ pulse_voltage = 400;
 pulse_width = 40;
 
 % dot diameter in the image plane (pix.)
-dot_diameter = 7;
+dot_diameter_image = 4;
+% dot diameter in the object plane (mm)
+dot_diameter_object = 0.5;
+
 % dot spacing in the image plane (pix.)
-dot_spacing = 8;
+dot_spacing_image = 1;
 % magnification (um/pix.)
-magnification = 10.5; %33;
+magnification = dot_diameter_object * 1e3/dot_diameter_image; %33;
 
 % size of the camera sensor (um)
 experimental_parameters.camera_design.pixel_pitch = 20.8; %20;
 % number of pixels on the camera
-experimental_parameters.camera_design.x_pixel_number = 1024; %1000;
-experimental_parameters.camera_design.y_pixel_number = 1024; %309;
+experimental_parameters.camera_design.x_pixel_number = 512; %1000;
+experimental_parameters.camera_design.y_pixel_number = 352; %309;
 % camera angles (deg.)
 experimental_parameters.camera_design.x_camera_angle = 0;
 experimental_parameters.camera_design.y_camera_angle = 0;
 % distance between camera and the dot target (um)
-experimental_parameters.lens_design.object_distance = 10.5 * 2.54 * 10e3;
+% (not required if camera model is soloff)
+experimental_parameters.lens_design.object_distance = NaN; 
 % non-dimensional magnification
 experimental_parameters.lens_design.magnification = experimental_parameters.camera_design.pixel_pitch/magnification; %6.45/28.63; %1.3;
 % spacing between dots (um)
-experimental_parameters.bos_pattern.dot_spacing = 84; %dot_spacing * magnification; % 2*150; %2*250; %180;
+experimental_parameters.bos_pattern.dot_spacing = dot_spacing_image * magnification; %dot_spacing * magnification; % 2*150; %2*250; %180;
 
 %% Processing settings
 
@@ -99,6 +103,11 @@ id.intensity_threshold_current = 500;
 % 'standard')
 id.identification_method = 'apriori';
 
+% minimum subtraction (true/false)
+id.minimum_subtraction = false; %true;
+% intensity level for subtraction 
+id.minimum_intensity_level = 3.5e4;
+
 % subpixel fit ('tpg', 'lsg')
 sizing.centroid_subpixel_fit = 'iwc'; %'clsg';
 % default to iwc if the gaussian fit fails? (true/false)
@@ -109,7 +118,7 @@ sizing.default_iwc = false;
 % ------------------------------------------
 
 % approximate dot diameter [pix.]
-id.dot_diameter = dot_diameter;
+id.dot_diameter = dot_diameter_image;
 % minimum area for a set of pixels to be considered a dot [pix.^2]
 id.min_area = 0.5 * id.dot_diameter^2;
 % camera model to use for projecting known dot positions from object space

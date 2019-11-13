@@ -172,6 +172,22 @@ tracking.correlation_correction.min_sub = 1;
 % subpixel fit for the correlation plane ('tpg', 'lsg')
 tracking.correlation_correction.subpixel_fit = 'lsg';
 
+% ------------------------------------------
+% Validation settings
+% ------------------------------------------
+% perform validation? (True/False)
+tracking.perform_validation = true;
+% perform displacement thresholding? (True/False)
+tracking.validation.perform_displacement_thresholding = true;
+% displacement threshold (pix.)
+tracking.validation.displacement_threshold = 5;
+% perform UOD? (True/False)
+tracking.validation.perform_uod = true;
+% replace vectors in UOD? (True/False)
+tracking.validation.replace_vectors = true;
+% UOD residual threshold (2-4, lower is stricter)
+tracking.validation.uod_residual_threshold = 3;
+
 %% load sample job file
 
 % this is the filepath containing the sample parameter file

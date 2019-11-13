@@ -411,6 +411,58 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             
         end
         
+        %% displacement vector validation
+        
+        % check if validation field exists
+        if ~isfield(tracking, 'validation')
+            tracking.perform_validation = false;
+        end
+        
+        % peform validation if specified
+        if tracking.perform_validation
+            %% create array to hold results
+            % extract tracks
+            tracks = tracks_all{image_pair_index};
+            % add two columns at the end of the tracks array to hold the
+            % validated displacements 
+            tracks = padarray(tracks, [0, 2], NaN, 'post');
+            % copy u displacements
+            tracks(:, 16) = tracks(:, 14);
+            % copy v displacements
+            tracks(:, 17) = tracks(:, 15);
+            
+            %% displacement thresholding
+            % add another column to hold the validation flag (0 for
+            % replaced, 1 for not replaced)
+            tracks = padarray(tracks, [0, 1], 0, 'post');
+            if tracking.validation.perform_displacement_thresholding
+                % find indices that are outside the specified thershold
+                indices = find(abs(tracks(:, 16)) > tracking.validation.displacement_threshold ...
+                    | abs(tracks(:, 17) > tracking.validation.displacement_threshold));
+                
+                tracks(indices, 16) = NaN;
+                tracks(indices, 17) = NaN;
+                
+                tracks(indices, 18) = tracks(indices, 18) + 1;
+            end
+            
+            %% uod
+            if tracking.validation.perform_uod
+                % perform uod
+                [u_val, v_val, val, ~, ~] = uod_ptv(tracks(:, 1), tracks(:, 3), tracks(:, 16), tracks(:, 17), tracking.validation.replace_vectors, tracking.validation.uod_residual_threshold);
+                % update tracks
+                tracks(:, 16) = u_val;
+                tracks(:, 17) = v_val;
+                
+                if tracking.validation.replace_vectors
+                    % add replacement flag
+                    tracks(indices, 18) = tracks(indices, 18) + val;
+                end
+            end
+            
+            %% add validated tracks to original data structure
+            tracks_all{image_pair_index} = tracks;
+        end
         %% save results to file
         
         save_filename = ['file_' num2str(im_index, '%04d') '.mat'];

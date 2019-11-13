@@ -58,7 +58,10 @@ function [u_val, v_val, val, r0_u, r0_v] = uod_ptv(x, y, u, v, replace_vectors, 
         % find the IDs of the points that make up the edge with the current
         % point
         neighbor_ID = [E(E(:,1) == track_index,2); E(E(:,2) == track_index, 1)];
-
+        
+        if isempty(neighbor_ID)
+            continue;
+        end
         % extract co-ordinates of the current point
         x0 = DT.Points(track_index,1);
         y0 = DT.Points(track_index,2);

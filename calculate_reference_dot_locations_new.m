@@ -139,7 +139,10 @@ function [x_c, y_c] = calculate_reference_dot_locations_new(positions, parameter
         % flip co-ordinates
 %         x_c = parameters.camera_design.x_pixel_number - x_c;
 %         y_c = parameters.camera_design.y_pixel_number - y_c;
-
+        
+        % account for the starting index
+        x_c = x_c - starting_index_x;
+        y_c = y_c - starting_index_y;
     else
         fprintf('unknown camera model. exiting.\n');
         return;

@@ -1,4 +1,4 @@
-function h = plot_tracks(tracks, scale_factor, plot_corrected_tracks)
+function plot_tracks(tracks, scale_factor, plot_corrected_tracks)
 % Function to plot tracks
 % INPUTS:
 % tracks: result from weighted_nearest_neighbor3D
@@ -6,14 +6,12 @@ function h = plot_tracks(tracks, scale_factor, plot_corrected_tracks)
 % plot_corrected_tracks: boolean to specify if the correlation
 % corrected tracks (in the 14 and 15 columns are to be plotted).
 %
-% OUTPUTS:
-% h: handle to figure containing the plots
-%
 % AUTHOR:
 % Lalit Rajendran (lrajendr@purdue.edu)
 %
 % DATE:
 % 09/10/19
+
     if nargin < 2
         scale_factor = 1;
         plot_corrected_tracks = false;
@@ -31,7 +29,7 @@ function h = plot_tracks(tracks, scale_factor, plot_corrected_tracks)
         V_track = (tracks(:, 4) - tracks(:, 3));
     end
     % plot displacements
-    figure
+    
     quiver(X_track, Y_track, U_track * scale_factor, V_track * scale_factor, 'autoscale', 'off')
     annotate_image(gcf, gca);
     

@@ -1,4 +1,4 @@
-function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
+function run_dot_tracking_v3(io, id, sizing, tracking, experimental_parameters)
     %% get directory listings for images, vectors and diameters
 
     % get directory listing for images
@@ -14,6 +14,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         [vector_filenames,~] = get_directory_listing(io.correlation_results.directory, [io.correlation_results.basename '*.mat'], 'corrplane');
     end
 
+    %% load image mask
     if io.image_masking
         % load image mask
         image_mask = imread(io.image_mask_filepath);
@@ -21,8 +22,11 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         image_mask(image_mask > 0) = 1;
         % convert mask to double
         image_mask = double(image_mask);
+        % flip image mask
+        image_mask = flipud(image_mask);
     end
     
+    %% save parmeters to file
     save(fullfile(io.results_save_directory, 'io_params.mat'), 'io');
     %create write directory if it does not exist
     id_save_directory = fullfile(io.results_save_directory, 'id');
@@ -75,7 +79,24 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
     pos_ref_dots.x(indices) = [];
     pos_ref_dots.y(indices) = [];
     num_dots_ref = numel(pos_ref_dots.x); % - sum(indices);
-        
+
+    % invert y location of dots due to flipping the image               
+    pos_ref_dots.y = experimental_parameters.camera_design.y_pixel_number - pos_ref_dots.y;
+    
+    %if predicted locations lie in the masked region then ignore
+    if io.image_masking
+        for dot_index = 1:num_dots_ref
+            if image_mask(round(pos_ref_dots.y(dot_index)), round(pos_ref_dots.x(dot_index))) == 0
+                pos_ref_dots.x(dot_index) = NaN;
+                pos_ref_dots.y(dot_index) = NaN;
+            end
+        end
+        nan_indices = isnan(pos_ref_dots.x) | isnan(pos_ref_dots.y);
+        pos_ref_dots.x(nan_indices) = [];
+        pos_ref_dots.y(nan_indices) = [];
+    end
+
+    %% save position of reference dots to structure
     id.x_ref = pos_ref_dots.x;
     id.y_ref = pos_ref_dots.y;
 
@@ -112,17 +133,16 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             im2(im2 < 0) = 0;
         end
             
+        % flip images upside down
+        im1 = flipud(im1);
+        im2 = flipud(im2);
+
         % mask images
         if io.image_masking
             im1 = im1 .* image_mask;
             im2 = im2 .* image_mask;
-            image_mask = flipud(image_mask);
         end
-
-        % flip images upside down
-        im1 = flipud(im1);
-        im2 = flipud(im2);
-                
+               
         if strcmp(io.image_type, 'experimental')
             % flip numbering of images if it is experimental. this is because in experimental data,
             % the order is gradient image followed by reference. the
@@ -137,9 +157,6 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         if strcmp(tracking.initialization_method, 'correlation') || strcmp(id.diameter_estimation_method, 'correlation')
             % load vectors from cross-correlation
             vector_index = (image_pair_index-1)/(io.correlation_frame_step/2) + 1;
-            if contains(vector_filenames(vector_index).name, 'corrplane')
-                break;
-            end
             correlation_results_current = load(fullfile(vector_filenames(vector_index).folder, vector_filenames(vector_index).name));
         end
         
@@ -154,7 +171,6 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             fprintf('running dot identification\n');
 
             % copy settings to data structure
-%             particleIDprops = Data.ID;
             particleIDprops.v = id.intensity_threshold_current;
             particleIDprops.method = id.segmentation_method; %'dynamic';
             particleIDprops.contrast_ratio = 0;
@@ -183,7 +199,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             % perform dot sizing for frame 1 (only for the first
             % image pair as all reference images are identical)
             if image_pair_index == 1
-                [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy]=particle_sizing(im1,ID1_all{image_pair_index}.p_matrix,...
+                [SIZE1_all{image_pair_index}.XYDiameter, SIZE1_all{image_pair_index}.mapsizeinfo, SIZE1_all{image_pair_index}.locxy] = particle_sizing(im1,ID1_all{image_pair_index}.p_matrix,...
                                     ID1_all{image_pair_index}.num_p,sizeprops);
                                 
                 % remove nan estimates from sizing results for frame 1
@@ -224,43 +240,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             % the dot locations
             % ------------------------------------------------------------
 
-            %% calculate reference dot location from dot positions
-            if image_pair_index == 1                
-                
-%                 [pos_ref_dots.x, pos_ref_dots.y] = calculate_reference_dot_locations_new(id.positions, experimental_parameters, id.camera_model, id.mapping_coefficients, id.order_z);
-                pos_ref_dots.x = id.x_ref;
-                pos_ref_dots.y = id.y_ref;
-                num_dots_ref = numel(pos_ref_dots.x);
-%                 if cropped_image
-%                     pos_ref_dots.x = pos_ref_dots.x - crop_x;
-%                     pos_ref_dots.x = NC_im - pos_ref_dots.x;
-%                     pos_ref_dots.y = pos_ref_dots.y - crop_y;
-%                 end
-                
-                [NR_im, NC_im] = size(im1);
-                
-                pos_ref_dots.y = NR_im - pos_ref_dots.y;
-                
-%                 % remove points outside FOV
-%                 indices = pos_ref_dots.x < 1 | pos_ref_dots.x > NC_im-1 | pos_ref_dots.y < 1 | pos_ref_dots.y > NR_im-1;
-%                 pos_ref_dots.x(indices) = [];
-%                 pos_ref_dots.y(indices) = [];
-%                 num_dots_ref = numel(pos_ref_dots.x); % - sum(indices);
-                
-                %if predicted locations lie in the masked region then ignore
-                if io.image_masking
-                    for dot_index = 1:num_dots_ref
-                        %                 if image_mask(NR_im - round(pos_ref_dots.y(dot_index)), round(pos_ref_dots.x(dot_index))) == 0
-                        if image_mask(round(pos_ref_dots.y(dot_index)), round(pos_ref_dots.x(dot_index))) == 0
-                            pos_ref_dots.x(dot_index) = NaN;
-                            pos_ref_dots.y(dot_index) = NaN;
-                        end
-                    end
-                    nan_indices = isnan(pos_ref_dots.x) | isnan(pos_ref_dots.y);
-                    pos_ref_dots.x(nan_indices) = [];
-                    pos_ref_dots.y(nan_indices) = [];
-                end
-            end
+            
             %% frame 1
             
             fprintf('im1\n');
@@ -276,8 +256,8 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             % target (only for first image pair, as all reference images
             % are identical)
             if image_pair_index == 1
-                [SIZE1_all{image_pair_index}.XYDiameter,SIZE1_all{image_pair_index}.peaks, SIZE1_all{image_pair_index}.mapsizeinfo,SIZE1_all{image_pair_index}.locxy, SIZE1_all{image_pair_index}.mapint]=combined_ID_size_apriori_07(im1,pos_ref_dots.x, pos_ref_dots.y, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);                
-
+                [SIZE1_all{image_pair_index}.XYDiameter, SIZE1_all{image_pair_index}.peaks, SIZE1_all{image_pair_index}.mapsizeinfo, SIZE1_all{image_pair_index}.locxy, SIZE1_all{image_pair_index}.mapint] = combined_ID_size_apriori_10(im1, pos_ref_dots.x, pos_ref_dots.y, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);
+                                
                 % extract co-ordinates
                 X1 = SIZE1_all{image_pair_index}.XYDiameter(:,1);
                 Y1 = SIZE1_all{image_pair_index}.XYDiameter(:,2);
@@ -303,7 +283,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             end
                        
             % identify and size dots using their known locations on the target
-            [SIZE2_all{image_pair_index}.XYDiameter,SIZE2_all{image_pair_index}.peaks,SIZE2_all{image_pair_index}.mapsizeinfo,SIZE2_all{image_pair_index}.locxy, SIZE2_all{image_pair_index}.mapint]=combined_ID_size_apriori_07(im2, X2_est, Y2_est, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);
+            [SIZE2_all{image_pair_index}.XYDiameter, SIZE2_all{image_pair_index}.peaks, SIZE2_all{image_pair_index}.mapsizeinfo, SIZE2_all{image_pair_index}.locxy, SIZE2_all{image_pair_index}.mapint] = combined_ID_size_apriori_10(im2, X2_est, Y2_est, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);
             
             % extract co-ordinates
             X2 = SIZE2_all{image_pair_index}.XYDiameter(:,1);
@@ -339,19 +319,19 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         Z2_est = zeros(size(X1));
 
         % extract dot diameters from frame 1
-        d1 = SIZE1_all{image_pair_index}.XYDiameter(:,3);
+        d1 = sqrt(SIZE1_all{image_pair_index}.XYDiameter(:,3).^2 + SIZE1_all{image_pair_index}.XYDiameter(:,4).^2);
         % extract dot diameters from frame 2
-        d2 = SIZE2_all{image_pair_index}.XYDiameter(:,3);
+        d2 = sqrt(SIZE2_all{image_pair_index}.XYDiameter(:,3).^2 + SIZE2_all{image_pair_index}.XYDiameter(:,4).^2);
         
         % extract dot intensities from frame 1
-        I1 = SIZE1_all{image_pair_index}.XYDiameter(:,4);
+        I1 = SIZE1_all{image_pair_index}.XYDiameter(:,6);
         % extract dot intensities from frame 2
-        I2 = SIZE2_all{image_pair_index}.XYDiameter(:,4);
+        I2 = SIZE2_all{image_pair_index}.XYDiameter(:,6);
 
         % track the particles in the image pair using the 3D weighted
         % nearest neighbor tracking method
-        [tracks_all{image_pair_index}]=weighted_nearest_neighbor3D(X1,X2,X2_est,Y1,Y2,Y2_est,...
-            Z1,Z2,Z2_est,d1,d2,I1,I2, [tracking.distance_weight, tracking.size_weight, tracking.intensity_weight], tracking.search_radius);
+        [tracks_all{image_pair_index}] = weighted_nearest_neighbor3D(X1, X2, X2_est, Y1, Y2, Y2_est,...
+            Z1, Z2, Z2_est, d1, d2, I1, I2, [tracking.distance_weight, tracking.size_weight, tracking.intensity_weight], tracking.search_radius);
 
         %% correct sub-pixel estimate of displacement using a correlation based estimate
         if tracking.perform_correlation_correction
@@ -367,7 +347,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
                 end
                 % extract current track
                 track_current = tracks_all{image_pair_index}(track_index, :);
-                [U(track_index), V(track_index)] = cross_correlate_dots_06(im1, im2, SIZE1_all{image_pair_index}, SIZE2_all{image_pair_index}, track_current, tracking.correlation_correction.algorithm, tracking.correlation_correction.subpixel_fit, tracking.correlation_correction.zero_mean, tracking.correlation_correction.min_sub);            
+                [U(track_index), V(track_index)] = cross_correlate_dots_07(im1, im2, SIZE1_all{image_pair_index}, SIZE2_all{image_pair_index}, track_current, tracking.correlation_correction.subpixel_fit, tracking.correlation_correction.zero_mean, tracking.correlation_correction.min_sub);            
             end
             % append results to track
             tracks_all{image_pair_index} = [tracks_all{image_pair_index}, U, V];
@@ -432,8 +412,8 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             tracks = padarray(tracks, [0, 1], 0, 'post');
             if tracking.validation.perform_displacement_thresholding
                 % find indices that are outside the specified thershold
-                indices = find(abs(tracks(:, 16)) > tracking.validation.displacement_threshold ...
-                    | abs(tracks(:, 17) > tracking.validation.displacement_threshold));
+                indices = find(abs(tracks(:, 16)) > tracking.validation.max_displacement_threshold ...
+                    | abs(tracks(:, 17) > tracking.validation.max_displacement_threshold));
                 
                 tracks(indices, 16) = NaN;
                 tracks(indices, 17) = NaN;
@@ -451,7 +431,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
                 
                 if tracking.validation.replace_vectors
                     % add replacement flag
-                    tracks(indices, 18) = tracks(indices, 18) + val;
+                    tracks(:, 18) = tracks(:, 18) + val;
                 end
             end
             
@@ -460,20 +440,12 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         end
         %% save results to file
         
+        % name to save the file
         save_filename = ['file_' num2str(im_index, '%04d') '.mat'];
-        % save identification results
-        id1 = ID1_all{image_pair_index};
-        id2 = ID2_all{image_pair_index};
-        save(fullfile(id_save_directory, save_filename), 'id1', 'id2');
-        
-        % save sizing results
-        size1 = SIZE1_all{image_pair_index};
-        size2 = SIZE2_all{image_pair_index};
-        save(fullfile(size_save_directory, save_filename), 'size1', 'size2');
-        
-        % save tracking
-        tracks = tracks_all{image_pair_index};
-        save(fullfile(track_save_directory, save_filename), 'tracks');
+        % save results to file
+        save_tracking_results_to_file(ID1_all{image_pair_index}, ID2_all{image_pair_index}, id_save_directory, ...
+            SIZE1_all{image_pair_index}, SIZE2_all{image_pair_index}, size_save_directory, ...
+            tracks_all{image_pair_index}, track_save_directory, save_filename);
         
     end
     

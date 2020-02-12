@@ -163,8 +163,6 @@ tracking.initialization_method = 'none';
 
 % perform correlation_correction? (true/false)
 tracking.perform_correlation_correction = true;
-% correlation correction algorithm ('dcc', 'scc', 'rpc')
-tracking.correlation_correction.algorithm = 'dcc';
 % zero mean correlation windows? (true/false)
 tracking.correlation_correction.zero_mean = 0;
 % perform minimim subtraction? (true/false)
@@ -179,8 +177,8 @@ tracking.correlation_correction.subpixel_fit = 'lsg';
 tracking.perform_validation = true;
 % perform displacement thresholding? (True/False)
 tracking.validation.perform_displacement_thresholding = true;
-% displacement threshold (pix.)
-tracking.validation.displacement_threshold = 5;
+% maximum displacement threshold (pix.)
+tracking.validation.max_displacement_threshold = 5;
 % perform UOD? (True/False)
 tracking.validation.perform_uod = true;
 % replace vectors in UOD? (True/False)
@@ -228,5 +226,5 @@ for shot_index = 1 %:num_shots
     end
 
     % run tracking
-    run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters);
+    run_dot_tracking_v3(io, id, sizing, tracking, experimental_parameters);
 end

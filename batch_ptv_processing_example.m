@@ -90,6 +90,9 @@ io.correlation_results.pass_number = 2;
 io.correlation_results.frame_step = 2;
 % this is the base name of the files that contain the results to be analyzed
 io.correlation_results.basename =  ['BOS*pass' num2str(io.correlation_results.pass_number) '_'];
+% display intermediate progress to user? (true/false)
+io.display_intermediate_progress = false;
+
 % ------------------------------------------
 % Identification and Sizing settings
 % ------------------------------------------
@@ -226,5 +229,5 @@ for shot_index = 1 %:num_shots
     end
 
     % run tracking
-    run_dot_tracking_v3(io, id, sizing, tracking, experimental_parameters);
+    run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters);
 end

@@ -1,22 +1,40 @@
-function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
+function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
     %% check parameter files
+    
     [io, id, sizing, tracking] = check_parameter_files(io, id, sizing, tracking);
     
     %% save parmeters to file
+    % save input/output parameters
     save(fullfile(io.results_save_directory, 'io_params.mat'), 'io');
     
-    % create write directory if it does not exist
+    % save id parameters
     id_save_directory = fullfile(io.results_save_directory, 'id');
-    mkdir(id_save_directory);
+    mkdir_c(id_save_directory);
     save(fullfile(id_save_directory, 'id_params.mat'), 'id');
     
+    % save size parameters
     size_save_directory = fullfile(io.results_save_directory, 'size');
     mkdir(size_save_directory);
     save(fullfile(size_save_directory, 'size_params.mat'), 'sizing');
     
+    % save track parameters
     track_save_directory = fullfile(io.results_save_directory, 'tracks');
     mkdir(track_save_directory);                
     save(fullfile(track_save_directory, 'track_params.mat'), 'tracking');
+    
+    %% extract parameters for id and sizing
+    
+    % copy settings to data structure
+    particleIDprops.v = id.intensity_threshold_current;
+    particleIDprops.method = id.segmentation_method; %'dynamic';
+    particleIDprops.contrast_ratio = 0;
+
+    % copy settings to data structure
+    sizeprops.thresh = id.intensity_threshold_current;
+    sizeprops.p_area = id.min_area; %d_p^2;
+    sizeprops.sigma = 4;
+    sizeprops.errors = double(sizing.default_iwc); % retain IWC estimate if gaussian fit fails
+    sizeprops.method = sizing.centroid_subpixel_fit;
 
     %% load image mask
     if io.image_masking
@@ -63,7 +81,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
     end
     
     % calculate reference dot locations
-    fprintf('calculating reference dot locations\n');
+    fprintf_c('calculating reference dot locations\n', io.display_intermediate_progress);
     [pos_ref_dots.x, pos_ref_dots.y] = calculate_reference_dot_locations_new(positions, experimental_parameters, id.camera_model, mapping_coefficients, id.order_z, id.starting_index_x, id.starting_index_y);
         
     % remove points outside FOV
@@ -105,12 +123,13 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
     if strcmp(tracking.initialization_method, 'correlation') || strcmp(id.diameter_estimation_method, 'correlation')
         % get directory listing for vectors
         [vector_filenames,~] = get_directory_listing(io.correlation_results.directory, [io.correlation_results.basename '*.mat'], 'corrplane');
+    else
+        vector_filenames = [];
     end
-
     
-    %% load reference image
+    %% reference image
     
-    fprintf('Reference Image\n');
+    fprintf_c('Reference Image\n', io.display_intermediate_progress);
     % image index (the reference image will be the second one in the
     % sequence)
     if strcmp(io.image_type, 'experimental')
@@ -125,32 +144,22 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
     % prepare image for processing
     im_ref = pre_process_image(im_ref, id.minimum_subtraction, image_mask);
         
+    % ---------------------------
     %% Identification and Sizing
+    % ---------------------------
 
     if strcmp(id.identification_method, 'standard')
         % ---------------------------------------------
         % standard dot identification and sizing
         % ---------------------------------------------
 
-        %% Dot identification
-        fprintf('running dot identification\n');
-
-        % copy settings to data structure
-        particleIDprops.v = id.intensity_threshold_current;
-        particleIDprops.method = id.segmentation_method; %'dynamic';
-        particleIDprops.contrast_ratio = 0;
+        % Dot identification
+        fprintf_c('running dot identification\n', io.display_intermediate_progress);
 
         [id_ref.p_matrix, id_ref.peaks, id_ref.num_p] = particle_ID(im_ref,particleIDprops);
 
-        %% Dot sizing
-        fprintf('running dot sizing\n');
-
-        % copy settings to data structure                        
-        sizeprops.thresh = id.intensity_threshold_current;
-        sizeprops.p_area = id.min_area; %d_p^2;
-        sizeprops.sigma = 4;
-        sizeprops.errors = double(sizing.default_iwc); % retain IWC estimate if gaussian fit fails
-        sizeprops.method = sizing.centroid_subpixel_fit;
+        % Dot sizing
+        fprintf_c('running dot sizing\n', io.display_intermediate_progress);
 
         % perform dot sizing for frame 1 (only for the first
         % image pair as all reference images are identical)
@@ -161,6 +170,9 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
         % dot identification and sizing using prior information about
         % the dot locations
         % ------------------------------------------------------------
+        
+        % create dummy structure for identification results
+        id_ref = struct;
         
         % predicted dot diameters for the reference image
         d_p = id.dot_diameter*ones(size(pos_ref_dots.x));
@@ -178,23 +190,27 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
     x_ref = size_ref.XYDiameter(:,1);
     y_ref = size_ref.XYDiameter(:,2);
     z_ref = zeros(size(x_ref));
-
+    
     %% load and process image pairs
 
-    image_pair_index = 0;
-    for im_index = io.imfstart:io.imfstep:io.imfend %num_image_pairs        
-        % index of the current image pair
-        image_pair_index = image_pair_index + 1;
+    % number of image pairs to read
+    num_image_pairs = (io.imfend - io.imfstart)/io.imfstep + 1;
+
+    parfor image_pair_index = 1:num_image_pairs        
         % display progress to user
         fprintf('Image Pair Number: %d\n', image_pair_index);
         
         %% load gradient image
         
+        % grad image index
         if strcmp(io.image_type, 'experimental')
-            im_grad = imread(fullfile(image_filenames(im_index).folder, image_filenames(im_index).name));
+            im_index = io.imfstart + 2 * (image_pair_index - 1);
         else
-            im_grad = imread(fullfile(image_filenames(im_index).folder, image_filenames(im_index + 1).name));
+            im_index = io.imfstart + 2 * (image_pair_index - 1) + 1;
         end
+        
+        % load image
+        im_grad = imread(fullfile(image_filenames(im_index).folder, image_filenames(im_index).name));
 
         % prepare image for processing
         im_grad = pre_process_image(im_grad, id.minimum_subtraction, image_mask);
@@ -206,7 +222,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
             vector_index = (image_pair_index-1)/(io.correlation_frame_step/2) + 1;
             correlation_results_current = load(fullfile(vector_filenames(vector_index).folder, vector_filenames(vector_index).name));
         end
-        
+
         %% Identification and Sizing
 
         if strcmp(id.identification_method, 'standard')
@@ -220,7 +236,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
             [id_grad.p_matrix, id_grad.peaks, id_grad.num_p] = particle_ID(im_grad, particleIDprops);
                 
             %% Dot sizing
-            fprintf('running dot sizing\n');
+            fprintf_c('running dot sizing\n', io.display_intermediate_progress);
 
             % perform dot sizing for frame 2
             [size_grad.XYDiameter, size_grad.mapsizeinfo, size_grad.locxy]=particle_sizing(im_grad, id_grad.p_matrix, id_grad.num_p, sizeprops);
@@ -231,6 +247,8 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
             % the dot locations
             % ------------------------------------------------------------
 
+            % create dummy structure for identification results
+            id_grad = struct;
             
             % estimate effective diameter from correlation
             if strcmp(id.diameter_estimation_method, 'correlation')
@@ -242,9 +260,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
             % estimate probable locations of dots on frame 2 based on their
             % position in frame 1 and the displacement field from
             % correlation or light ray displacements
-            if strcmp(id.initialization_method, 'rays')
-                [x_grad_est, y_grad_est] = calculate_predicted_dot_positions_02(x_ref, y_ref, id.initialization_method, pos_ref_rays_1.x, pos_ref_rays_1.y, pos_ref_rays_2.x - pos_ref_rays_1.x, pos_ref_rays_2.y - pos_ref_rays_1.y);
-            elseif strcmp(id.initialization_method, 'correlation')
+            if strcmp(id.initialization_method, 'correlation')
                 [x_grad_est, y_grad_est] = calculate_predicted_dot_positions_02(x_ref, y_ref, id.initialization_method, correlation_results_current.X, correlation_results_current.Y, correlation_results_current.U, correlation_results_current.V);
             else
                 x_grad_est = x_ref;
@@ -265,7 +281,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
 
         %% Tracking
         
-        fprintf('running dot tracking\n');
+        fprintf_c('running dot tracking\n', io.display_intermediate_progress);
         % if a guess for the dot positions in the second frame is required
         % and does not already exist, then calculae it
         if ~strcmp(tracking.initialization_method, 'none')
@@ -309,7 +325,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
         % data structure to hold the correlation plane
         Cp = cell(num_tracks, 1);
         if tracking.perform_correlation_correction
-            fprintf('Performing Correlation Correction\n');
+            fprintf_c('Performing Correlation Correction\n', io.display_intermediate_progress);
             % get final sub-pixel displacement estimate by cross-correlation intensity
             % maps of the dots
 
@@ -317,7 +333,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
             V = zeros(num_tracks,1);
             for track_index = 1:num_tracks
                 if rem(track_index, 1000) == 0
-                    fprintf('Track: %d of %d\n', track_index, num_tracks);
+                    fprintf_c('Track: %d of %d\n', track_index, num_tracks, io.display_intermediate_progress);
                 end
                 % extract current track
                 track_current = tracks(track_index, :);
@@ -330,7 +346,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
         %% flip tracking results to account for reordering reference and gradient images
         
         if strcmp(io.image_type, 'experimental')
-            fprintf('flipping tracks for experimental data\n');
+            fprintf_c('flipping tracks for experimental data\n', io.display_intermediate_progress);
             % swap x positions
             tracks(:, [1, 2]) = tracks(:, [2, 1]);
             % swap y positions
@@ -355,7 +371,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
         
         % peform validation if specified
         if tracking.perform_validation
-            fprintf('performing validation\n');
+            fprintf_c('performing validation\n', io.display_intermediate_progress);
             %% create array to hold results
             % extract number of columns
             num_cols = size(tracks, 2);
@@ -368,7 +384,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
             tracks(:, num_cols+2) = tracks(:, num_cols);
             
             %% displacement thresholding
-            fprintf('performing displacement thresholding\n');
+            fprintf_c('performing displacement thresholding\n', io.display_intermediate_progress);
             % add another column to hold the validation flag (0 for
             % replaced, 1 for not replaced)
             tracks = padarray(tracks, [0, 1], 0, 'post');
@@ -384,7 +400,7 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
             end
             
             %% uod
-            fprintf('performing uod\n');
+            fprintf_c('performing uod\n', io.display_intermediate_progress);
             if tracking.validation.perform_uod
                 % perform uod
                 [u_val, v_val, val, ~, ~] = uod_ptv(tracks(:, 1), tracks(:, 3), tracks(:, num_cols+1), tracks(:, num_cols+2), ...
@@ -399,8 +415,9 @@ function run_dot_tracking_v4(io, id, sizing, tracking, experimental_parameters)
                 end
             end            
         end
-        %% save results to file
         
+        %% save results to file
+        fprintf_c('saving results to file\n', io.display_intermediate_progress);
         % name to save the file
         save_filename = ['file_' num2str(im_index, '%04d') '.mat'];
         % save results to file

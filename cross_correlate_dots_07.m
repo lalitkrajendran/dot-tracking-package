@@ -1,4 +1,4 @@
-function [Uc, Vc] = cross_correlate_dots_07(im1, im2, size_1, size_2, track, subpixel_fit, zero_mean, min_sub)
+function [Uc, Vc, Cp] = cross_correlate_dots_07(im1, im2, size_1, size_2, track, subpixel_fit, zero_mean, min_sub)
 % this function cross-correlates the intensity maps of two dots and
 % estimates the displacement. The intensity maps are interrogation windows
 % centered around a dot in the respective frames

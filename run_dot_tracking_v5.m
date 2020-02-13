@@ -403,8 +403,8 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
             fprintf_c('performing uod\n', io.display_intermediate_progress);
             if tracking.validation.perform_uod
                 % perform uod
-                [u_val, v_val, val, ~, ~] = uod_ptv(tracks(:, 1), tracks(:, 3), tracks(:, num_cols+1), tracks(:, num_cols+2), ...
-                    tracking.validation.replace_vectors, tracking.validation.uod_residual_threshold);
+                [u_val, v_val, val, ~, ~] = uod_ptv(tracks(:, 1), tracks(:, 3), tracks(:, num_cols-1), tracks(:, num_cols), ...
+                    tracking.validation.replace_vectors, tracking.validation.uod_residual_threshold, tracking.validation.uod_epsilon);
                 % update tracks
                 tracks(:, num_cols+1) = u_val;
                 tracks(:, num_cols+2) = v_val;

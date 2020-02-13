@@ -16,4 +16,7 @@ function [io, id, sizing, tracking] = check_parameter_files(io, id, sizing, trac
         tracking.validation = false;
     end
     
+    if ~isfield(tracking.validation, 'uod_epsilon')
+        tracking.validation.uod_epsilon = 0.1;
+    end
 end

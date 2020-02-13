@@ -188,7 +188,8 @@ tracking.validation.perform_uod = true;
 tracking.validation.replace_vectors = true;
 % UOD residual threshold (2-4, lower is stricter)
 tracking.validation.uod_residual_threshold = 3;
-
+% minimum allowable threshold [pix.]
+tracking.validation.uod_epsilon = 0.1;
 %% load sample job file
 
 % this is the filepath containing the sample parameter file

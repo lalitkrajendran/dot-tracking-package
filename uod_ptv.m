@@ -123,7 +123,14 @@ function [u_val, v_val, val, r0_u, r0_v] = uod_ptv(x, y, u, v, replace_vectors, 
             val(track_index) = 1;
             if replace_vectors
                 F_U = scatteredInterpolant(xi, yi, Ui, 'natural');
-                u_val(track_index) = F_U(x0, y0);
+                interp_val = F_U(x0, y0);
+                % if the interpolated value is not empty, then assign it to
+                % the track
+                if interp_val
+                    u_val(track_index) = interp_val;
+                else
+                    u_val(track_index) = NaN;
+                end
             else
                 u_val(track_index) = NaN;
             end
@@ -135,7 +142,14 @@ function [u_val, v_val, val, r0_u, r0_v] = uod_ptv(x, y, u, v, replace_vectors, 
             val(track_index) = 1;
             if replace_vectors
                 F_V = scatteredInterpolant(xi, yi, Vi, 'natural');
-                v_val(track_index) = F_V(x0, y0);
+                % if the interpolated value is not empty, then assign it to
+                % the track
+                interp_val = F_V(x0, y0);
+                if interp_val
+                    v_val(track_index) = interp_val;
+                else
+                    v_val(track_index) = NaN;
+                end
             else
                 v_val(track_index) = NaN;                
             end

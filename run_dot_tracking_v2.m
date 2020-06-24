@@ -154,7 +154,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             fprintf('running dot identification\n');
 
             % copy settings to data structure
-%             particleIDprops = Data.ID;
+            % particleIDprops = Data.ID;
             particleIDprops.v = id.intensity_threshold_current;
             particleIDprops.method = id.segmentation_method; %'dynamic';
             particleIDprops.contrast_ratio = 0;
@@ -225,27 +225,26 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             % ------------------------------------------------------------
 
             %% calculate reference dot location from dot positions
-            if image_pair_index == 1                
-                
-%                 [pos_ref_dots.x, pos_ref_dots.y] = calculate_reference_dot_locations_new(id.positions, experimental_parameters, id.camera_model, id.mapping_coefficients, id.order_z);
+            if image_pair_index == 1                                
+                % [pos_ref_dots.x, pos_ref_dots.y] = calculate_reference_dot_locations_new(id.positions, experimental_parameters, id.camera_model, id.mapping_coefficients, id.order_z);
                 pos_ref_dots.x = id.x_ref;
                 pos_ref_dots.y = id.y_ref;
                 num_dots_ref = numel(pos_ref_dots.x);
-%                 if cropped_image
-%                     pos_ref_dots.x = pos_ref_dots.x - crop_x;
-%                     pos_ref_dots.x = NC_im - pos_ref_dots.x;
-%                     pos_ref_dots.y = pos_ref_dots.y - crop_y;
-%                 end
+                % if cropped_image
+                %     pos_ref_dots.x = pos_ref_dots.x - crop_x;
+                %     pos_ref_dots.x = NC_im - pos_ref_dots.x;
+                %     pos_ref_dots.y = pos_ref_dots.y - crop_y;
+                % end
                 
                 [NR_im, NC_im] = size(im1);
                 
                 pos_ref_dots.y = NR_im - pos_ref_dots.y;
                 
-%                 % remove points outside FOV
-%                 indices = pos_ref_dots.x < 1 | pos_ref_dots.x > NC_im-1 | pos_ref_dots.y < 1 | pos_ref_dots.y > NR_im-1;
-%                 pos_ref_dots.x(indices) = [];
-%                 pos_ref_dots.y(indices) = [];
-%                 num_dots_ref = numel(pos_ref_dots.x); % - sum(indices);
+                % % remove points outside FOV
+                % indices = pos_ref_dots.x < 1 | pos_ref_dots.x > NC_im-1 | pos_ref_dots.y < 1 | pos_ref_dots.y > NR_im-1;
+                % pos_ref_dots.x(indices) = [];
+                % pos_ref_dots.y(indices) = [];
+                % num_dots_ref = numel(pos_ref_dots.x); % - sum(indices);
                 
                 %if predicted locations lie in the masked region then ignore
                 if io.image_masking
@@ -373,8 +372,7 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             tracks_all{image_pair_index} = [tracks_all{image_pair_index}, U, V];
         end
         
-        %% flip tracking results to account for reordering reference and gradient images
-        
+        %% flip tracking results to account for reordering reference and gradient images        
         if strcmp(io.image_type, 'experimental')
             tracks_temp = tracks_all{image_pair_index};
             % swap x positions
@@ -432,8 +430,8 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
             tracks = padarray(tracks, [0, 1], 0, 'post');
             if tracking.validation.perform_displacement_thresholding
                 % find indices that are outside the specified thershold
-                indices = find(abs(tracks(:, 16)) > tracking.validation.displacement_threshold ...
-                    | abs(tracks(:, 17) > tracking.validation.displacement_threshold));
+                indices = find(abs(tracks(:, 16)) < tracking.validation.displacement_threshold ...
+                    | abs(tracks(:, 17) < tracking.validation.displacement_threshold));
                 
                 tracks(indices, 16) = NaN;
                 tracks(indices, 17) = NaN;
@@ -473,8 +471,6 @@ function run_dot_tracking_v2(io, id, sizing, tracking, experimental_parameters)
         
         % save tracking
         tracks = tracks_all{image_pair_index};
-        save(fullfile(track_save_directory, save_filename), 'tracks');
-        
-    end
-    
+        save(fullfile(track_save_directory, save_filename), 'tracks');        
+    end    
 end

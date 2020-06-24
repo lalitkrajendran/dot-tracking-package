@@ -9,17 +9,23 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
     
     % save id parameters
     id_save_directory = fullfile(io.results_save_directory, 'id');
-    mkdir_c(id_save_directory);
+    if ~exist(id_save_directory)
+        mkdir(id_save_directory);
+    end
     save(fullfile(id_save_directory, 'id_params.mat'), 'id');
     
     % save size parameters
     size_save_directory = fullfile(io.results_save_directory, 'size');
-    mkdir(size_save_directory);
+    if ~exist(size_save_directory)
+        mkdir(size_save_directory);
+    end
     save(fullfile(size_save_directory, 'size_params.mat'), 'sizing');
     
     % save track parameters
     track_save_directory = fullfile(io.results_save_directory, 'tracks');
-    mkdir(track_save_directory);                
+    if ~exist(track_save_directory)
+        mkdir(track_save_directory);                
+    end
     save(fullfile(track_save_directory, 'track_params.mat'), 'tracking');
     
     %% extract parameters for id and sizing
@@ -83,6 +89,8 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
     % calculate reference dot locations
     fprintf_c('calculating reference dot locations\n', io.display_intermediate_progress);
     [pos_ref_dots.x, pos_ref_dots.y] = calculate_reference_dot_locations_new(positions, experimental_parameters, id.camera_model, mapping_coefficients, id.order_z, id.starting_index_x, id.starting_index_y);
+    % invert y location of dots due to flipping the image               
+    pos_ref_dots.y = experimental_parameters.camera_design.y_pixel_number - pos_ref_dots.y;
         
     % remove points outside FOV
     indices = pos_ref_dots.x < 1 | pos_ref_dots.x > experimental_parameters.camera_design.x_pixel_number-1 | pos_ref_dots.y < 1 | pos_ref_dots.y > experimental_parameters.camera_design.y_pixel_number-1;
@@ -90,10 +98,7 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
     pos_ref_dots.y(indices) = [];
     num_dots_ref = numel(pos_ref_dots.x); % - sum(indices);
 
-    % invert y location of dots due to flipping the image               
-    pos_ref_dots.y = experimental_parameters.camera_design.y_pixel_number - pos_ref_dots.y;
-    
-    %if predicted locations lie in the masked region then ignore
+    % if predicted locations lie in the masked region then ignore
     if io.image_masking
         for dot_index = 1:num_dots_ref
             if image_mask(round(pos_ref_dots.y(dot_index)), round(pos_ref_dots.x(dot_index))) == 0
@@ -142,7 +147,7 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
     im_ref = imread(fullfile(image_filenames(im_index).folder, image_filenames(im_index).name));
     
     % prepare image for processing
-    im_ref = pre_process_image(im_ref, id.minimum_subtraction, image_mask);
+    im_ref = pre_process_image(im_ref, id.minimum_subtraction, id.minimum_intensity_level, image_mask);
         
     % ---------------------------
     %% Identification and Sizing
@@ -213,7 +218,7 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
         im_grad = imread(fullfile(image_filenames(im_index).folder, image_filenames(im_index).name));
 
         % prepare image for processing
-        im_grad = pre_process_image(im_grad, id.minimum_subtraction, image_mask);
+        im_grad = pre_process_image(im_grad, id.minimum_subtraction, id.minimum_intensity_level, image_mask);
 
         %% load results from correlation processing for the current image pair
 
@@ -426,5 +431,4 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
             tracks, Cp, track_save_directory, save_filename);
         
     end
-    
 end

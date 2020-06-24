@@ -1,4 +1,4 @@
-function im_new = pre_process_image(im, perform_minimum_subtraction, image_mask)
+function im_new = pre_process_image(im, perform_minimum_subtraction, minimum_intensity_level,image_mask)
 % This function applies common pre-processing operations for the image
 % 1. Converts to double
 % 2. Peforms minimum subtraction if required
@@ -12,7 +12,7 @@ function im_new = pre_process_image(im, perform_minimum_subtraction, image_mask)
     
     % peform minimum subtraction if required
     if perform_minimum_subtraction
-        im_new = im_new - id.minimum_intensity_level;
+        im_new = im_new - minimum_intensity_level;
         im_new(im_new < 0) = 0;
     end
     

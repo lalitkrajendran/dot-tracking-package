@@ -56,6 +56,12 @@ function [ref_avg_props, ref_all_props] = calculate_average_reference_image_prop
 
         % create track array
         tracks_ref = zeros(num_p, 12);
+        tracks_ref(:, 1) = size_ref.XYDiameter(:, 1);
+        tracks_ref(:, 2) = size_current.XYDiameter(:, 1);
+
+        tracks_ref(:, 3) = size_ref.XYDiameter(:, 2);
+        tracks_ref(:, 4) = size_current.XYDiameter(:, 2);
+
         tracks_ref(:, 11) = 1:num_p;
         tracks_ref(:, 12) = 1:num_p;
         

@@ -1,29 +1,23 @@
 function [X_grid, Y_grid, U_grid, V_grid] = interpolate_tracks(X, Y, U, V, grid_spacing)
+% Function to interpolate tracked displacements onto a grid
+%
+% INPUTS:
+% X, Y: x, y co-ordinates of the tracks (pix.)
+% U, V: x, y displacements of the tracks (pix.)
+% grid_spacing: desired grid spacing - usually the dot spacing (pix.)
+% 
+% OUTPUTS:
+% X_grid, Y_grid: co-ordinate grid
+% U_grid, V_grid: interpolated displacements on the grid
+%
+% AUTHOR:
+% Lalit Rajendran (lrajendr@purdue.edu)
 
-    %% calculate min and max x,y co-ordinates of the point cloud
-    xmin = ceil(min(X));
-    xmax = floor(max(X));
+    % create grid
+    [X_grid, Y_grid] = create_grid(X, Y, dot_spacing)
 
-    ymin = ceil(min(Y));
-    ymax = floor(max(Y));
-    
-    %% generate 2D grid
-    x_grid = xmin:grid_spacing:xmax;
-    y_grid = ymin:grid_spacing:ymax;
-    
-    [X_grid, Y_grid] = meshgrid(x_grid, y_grid);
-    
-    %% create interpolants
-    F_U = scatteredInterpolant(X, Y, U, 'natural');
-    F_V = scatteredInterpolant(X, Y, V, 'natural');
-    F_U.ExtrapolationMethod = 'none';
-    F_V.ExtrapolationMethod = 'none';
-    
-    %% interpolate displacements onto the grid
-    U_grid = F_U(X_grid, Y_grid);
-    V_grid = F_V(X_grid, Y_grid);
-    
-    %% replace NaNs by linear interpolation
-    U_grid = fillmissing(U_grid, 'linear');
-    V_grid = fillmissing(V_grid, 'linear');   
+    % interpolate displacements
+    U_grid = interpolate_to_grid(X, Y, U, X_grid, Y_grid);
+    V_grid = interpolate_to_grid(X, Y, V, X_grid, Y_grid);
+
 end

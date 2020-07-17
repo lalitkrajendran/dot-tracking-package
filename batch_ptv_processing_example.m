@@ -112,7 +112,7 @@ id.minimum_subtraction = false; %true;
 id.minimum_intensity_level = 3.5e4;
 
 % subpixel fit ('tpg', 'lsg')
-sizing.centroid_subpixel_fit = 'iwc'; %'clsg';
+sizing.centroid_subpixel_fit = 'lsg'; %'clsg';
 % default to iwc if the gaussian fit fails? (true/false)
 sizing.default_iwc = false;
 

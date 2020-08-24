@@ -178,6 +178,8 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
         
         % create dummy structure for identification results
         id_ref = struct;
+        id_ref.x_ref = id.x_ref;
+        id_ref.y_ref = id.y_ref;
         
         % predicted dot diameters for the reference image
         d_p = id.dot_diameter*ones(size(pos_ref_dots.x));
@@ -380,23 +382,24 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
             %% create array to hold results
             % extract number of columns
             num_cols = size(tracks, 2);
-            % add two columns at the end of the tracks array to hold the
+            % add columns at the end of the tracks array to hold the
             % validated displacements 
-            tracks = padarray(tracks, [0, 2], NaN, 'post');
+            tracks = padarray(tracks, [0, 3], NaN, 'post');
             % copy u displacements
             tracks(:, num_cols+1) = tracks(:, num_cols-1);
             % copy v displacements
             tracks(:, num_cols+2) = tracks(:, num_cols);
+            % set column to hold the validation flag (0 for % replaced, 1 for not replaced)
+            tracks(:, num_cols+3) = 0;
             
+            % --------------------------
             %% displacement thresholding
-            fprintf_c('performing displacement thresholding\n', io.display_intermediate_progress);
-            % add another column to hold the validation flag (0 for
-            % replaced, 1 for not replaced)
-            tracks = padarray(tracks, [0, 1], 0, 'post');
+            % --------------------------
             if tracking.validation.perform_displacement_thresholding
+                fprintf_c('performing displacement thresholding\n', io.display_intermediate_progress);
                 % find indices that are outside the specified thershold
                 indices = find(abs(tracks(:, num_cols+1)) > tracking.validation.max_displacement_threshold ...
-                    | abs(tracks(:, num_cols+2) > tracking.validation.max_displacement_threshold));
+                    | abs(tracks(:, num_cols+2)) > tracking.validation.max_displacement_threshold);
                 
                 tracks(indices, num_cols+1) = NaN;
                 tracks(indices, num_cols+2) = NaN;
@@ -404,9 +407,11 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
                 tracks(indices, num_cols+3) = tracks(indices, num_cols+3) + 1;
             end
             
+            % --------------------------
             %% uod
-            fprintf_c('performing uod\n', io.display_intermediate_progress);
+            % --------------------------
             if tracking.validation.perform_uod
+                fprintf_c('performing uod\n', io.display_intermediate_progress);
                 % perform uod
                 [u_val, v_val, val, ~, ~] = uod_ptv(tracks(:, 1), tracks(:, 3), tracks(:, num_cols-1), tracks(:, num_cols), ...
                     tracking.validation.replace_vectors, tracking.validation.uod_residual_threshold, tracking.validation.uod_epsilon);

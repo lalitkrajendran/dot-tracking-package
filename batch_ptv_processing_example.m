@@ -4,7 +4,6 @@ clc
 
 restoredefaultpath;
 
-addpath ../dot-tracking-package/
 dbstop if error
 
 logical_string = {'False', 'True'};
@@ -12,51 +11,31 @@ logical_string = {'False', 'True'};
 % ==========================
 %% experiment settings
 % ==========================
-% date of experiment
-test_date = '2019-03-22';
-% electrode gap (mm)
-gap = 2;
-% view (front, side, top)
-camera_view = 'front-view';
-% top level project directory
-project_directory = '/scratch/shannon/c/aether/Projects/plasma-induced-flow/';% body placed in the tunnel
-% top directory containing images for this case
-top_image_directory = fullfile(project_directory, 'analysis', 'data', 'dbd', test_date, [num2str(gap) 'mm'], camera_view, 'bos'); 
-% top directory to contain results for this case
-top_results_directory = fullfile(project_directory, 'analysis', 'results', 'dbd', test_date, [num2str(gap) 'mm'], camera_view, 'bos');
-% pulse voltage (V)
-pulse_voltage = 400;
-% pulse width (ns)
-pulse_width = 40;
-
 % dot diameter in the image plane (pix.)
-dot_diameter_image = 4;
-% dot diameter in the object plane (mm)
-dot_diameter_object = 0.5;
-
+dot_diameter = 7;
 % dot spacing in the image plane (pix.)
-dot_spacing_image = 1;
+dot_spacing = 8;
 % magnification (um/pix.)
-magnification = dot_diameter_object * 1e3/dot_diameter_image; %33;
+magnification = 10.5; %33;
 
 % size of the camera sensor (um)
 experimental_parameters.camera_design.pixel_pitch = 20.8; %20;
 % number of pixels on the camera
-experimental_parameters.camera_design.x_pixel_number = 512; %1000;
-experimental_parameters.camera_design.y_pixel_number = 352; %309;
+experimental_parameters.camera_design.x_pixel_number = 1024; %1000;
+experimental_parameters.camera_design.y_pixel_number = 1024; %309;
 % camera angles (deg.)
 experimental_parameters.camera_design.x_camera_angle = 0;
 experimental_parameters.camera_design.y_camera_angle = 0;
 % distance between camera and the dot target (um)
-% (not required if camera model is soloff)
-experimental_parameters.lens_design.object_distance = NaN; 
+experimental_parameters.lens_design.object_distance = 10.5 * 2.54 * 10e3;
 % non-dimensional magnification
 experimental_parameters.lens_design.magnification = experimental_parameters.camera_design.pixel_pitch/magnification; %6.45/28.63; %1.3;
 % spacing between dots (um)
-experimental_parameters.bos_pattern.dot_spacing = dot_spacing_image * magnification; %dot_spacing * magnification; % 2*150; %2*250; %180;
+experimental_parameters.bos_pattern.dot_spacing = 84; %dot_spacing * magnification; % 2*150; %2*250; %180;
 
+% ==========================
 %% Processing settings
-
+% ==========================
 % ------------------------------------------
 % I/O settings
 % ------------------------------------------
@@ -73,8 +52,7 @@ io.imfend = 1;
 
 % perform image masking (true/false)
 io.image_masking = true;
-% image_mask_filepath = '/home/shannon/c/aether/Projects/BOS/nozzle/analysis/data/images/2018-10-05/0_25mm/allpsi/test1/processing/single-ref/staticmask.tif';
-io.image_mask_filepath = fullfile(top_image_directory, 'mask.tif');
+io.image_mask_filepath = './sample-data/mask.tif';
 
 % were the images cropped prior to processing? (true/false)
 io.cropped_image = false;
@@ -93,10 +71,10 @@ io.correlation_results.frame_step = 2;
 % this is the base name of the files that contain the results to be analyzed
 io.correlation_results.basename =  ['BOS*pass' num2str(io.correlation_results.pass_number) '_'];
 % display intermediate progress to user? (true/false)
-io.display_intermediate_progress = true;
+io.display_intermediate_progress = false;
 
 % ------------------------------------------
-% Identification and Sizing settings
+% Standard Identification settings
 % ------------------------------------------
 id = struct;
 % image segmentation method (for standard id)
@@ -108,22 +86,11 @@ id.intensity_threshold_current = 500;
 % 'standard')
 id.identification_method = 'apriori';
 
-% minimum subtraction (true/false)
-id.minimum_subtraction = false; %true;
-% intensity level for subtraction 
-id.minimum_intensity_level = 3.5e4;
-
-% subpixel fit ('tpg', 'lsg')
-sizing.centroid_subpixel_fit = 'lsg'; %'clsg';
-% default to iwc if the gaussian fit fails? (true/false)
-sizing.default_iwc = false;
-
 % ------------------------------------------
 % Apriori position estimation settings
 % ------------------------------------------
-
 % approximate dot diameter [pix.]
-id.dot_diameter = dot_diameter_image;
+id.dot_diameter = dot_diameter;
 % minimum area for a set of pixels to be considered a dot [pix.^2]
 id.min_area = 0.5 * id.dot_diameter^2;
 % camera model to use for projecting known dot positions from object space
@@ -132,8 +99,8 @@ id.min_area = 0.5 * id.dot_diameter^2;
 id.camera_model = 'soloff';
 % order of the z polynomial mapping function for soloff (if application)
 id.order_z = 1;
-% directory containing the camera model
-id.camera_model_directory = fullfile(top_image_directory, 'calibration');
+% % directory containing the camera model
+% id.camera_model_directory = fullfile(top_image_directory, 'calibration');
 % method to estimate approximate effective diameter of a dot in the image
 % ('correlation', 'none');
 id.diameter_estimation_method = 'none';
@@ -146,6 +113,14 @@ id.starting_index_x = 0;
 id.starting_index_y = 1;
 % initialization method for hybrid tracking ('none', 'correlation')
 id.initialization_method = 'none';
+
+% ------------------------------------------
+% Sizing settings for both standard/apriori
+% ------------------------------------------
+% subpixel fit ('tpg', 'lsg')
+sizing.centroid_subpixel_fit = 'lsg'; 
+% default to iwc if the gaussian fit fails? (true/false)
+sizing.default_iwc = false;
 
 % ------------------------------------------
 % Tracking settings
@@ -167,6 +142,8 @@ tracking.initialization_method = 'none';
 % ------------------------------------------
 % perform correlation_correction? (true/false)
 tracking.perform_correlation_correction = true;
+% correlation correction algorithm ('dcc', 'scc', 'rpc')
+tracking.correlation_correction.algorithm = 'dcc';
 % zero mean correlation windows? (true/false)
 tracking.correlation_correction.zero_mean = 0;
 % perform minimim subtraction? (true/false)
@@ -182,58 +159,37 @@ tracking.perform_validation = true;
 % perform displacement thresholding? (True/False)
 tracking.validation.perform_displacement_thresholding = true;
 % maximum displacement threshold (pix.)
-tracking.validation.max_displacement_threshold = 5;
+tracking.validation.max_displacement_threshold = 3;
 % perform UOD? (True/False)
 tracking.validation.perform_uod = true;
 % replace vectors in UOD? (True/False)
 tracking.validation.replace_vectors = true;
 % UOD residual threshold (2-4, lower is stricter)
-tracking.validation.uod_residual_threshold = 3;
+tracking.validation.uod_residual_threshold = 2;
 % minimum allowable threshold [pix.]
 tracking.validation.uod_epsilon = 0.1;
 
-
 % ==========================
-%
-% ==========================
-
-% this is the filepath containing the sample parameter file
-sample_job_filepath = '/scratch/shannon/c/aether/Projects/BOS/error-analysis/analysis/data/sample-job-files/';
-
-% this is the sample parameter filename 
-sample_job_filename = ['sample_job_ptv_' sizing.centroid_subpixel_fit '.mat'];
-
-% load a sample parameter file
-sample_bos_params = load([sample_job_filepath sample_job_filename]);
-Data = sample_bos_params.Data;
-Data.par = '0';
-
 %% process images
+% ==========================
+% top read directory for this case
+current_image_directory = './sample-data/images/'; 
+current_results_directory = './sample-results/';
 
-% obtain list of folders in this directory
-[shot_folders, num_shots] = get_directory_listing(fullfile(top_image_directory, [num2str(pulse_voltage) 'V_' num2str(pulse_width) 'ns']), 'shot*');
+% directory containing images
+io.image_directory = current_image_directory;
 
-for shot_index = 1 %:num_shots
-    %% create directory to store results
-    % display progress to user
-    fprintf('run number: %d\n', shot_index);
+% directory containing calibration results
+id.camera_model_directory = fullfile(current_results_directory, 'calibration');
 
-    % top read directory for this case
-    current_image_directory = fullfile(shot_folders(shot_index).folder, shot_folders(shot_index).name, 'processing', 'average-ref');
-    current_results_directory = fullfile(top_results_directory, [num2str(pulse_voltage) 'V_' num2str(pulse_width) 'ns'], shot_folders(shot_index).name, 'ptv');
-
-    % directory containing images
-    io.image_directory = current_image_directory;
-
-    % name for this processing case
-    case_name = ['id=' id.identification_method '_size=' sizing.centroid_subpixel_fit '_corr=' tracking.correlation_correction.subpixel_fit];
-
-    % create directory to save results
-    io.results_save_directory = fullfile(current_results_directory, case_name);
-    if ~exist(io.results_save_directory, 'dir')
-        mkdir(io.results_save_directory);
-    end
-
-    % run tracking
-    run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters);
+% name for this processing case
+case_name = ['id=' id.identification_method '_size=' sizing.centroid_subpixel_fit '_corr=' tracking.correlation_correction.subpixel_fit];
+% create directory to save results
+io.results_save_directory = fullfile(current_results_directory, case_name);
+if ~exist(io.results_save_directory, 'dir')
+    mkdir(io.results_save_directory);
 end
+
+% run tracking
+run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters);
+

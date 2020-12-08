@@ -1,3 +1,7 @@
 # temporary files
 *.m~
 ._*
+
+# folders
+sample-data
+sample-results

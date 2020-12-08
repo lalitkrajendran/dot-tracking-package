@@ -194,6 +194,10 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
         % dot identification and sizing using prior information about
         % the dot locations
         % ------------------------------------------------------------
+        % Dot identification
+        if io.display_intermediate_progress
+            fprintf('running dot identification\n');
+        end
         
         % create dummy structure for identification results
         id_ref = struct;
@@ -203,6 +207,11 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
         % predicted dot diameters for the reference image
         d_p = id.dot_diameter*ones(size(pos_ref_dots.x));
 
+        % Dot identification
+        if io.display_intermediate_progress
+            fprintf('running dot sizing\n');
+        end
+        
         % identify and size dots using their known locations on the
         % target 
         [size_ref.XYDiameter, size_ref.peaks, size_ref.mapsizeinfo, size_ref.locxy, size_ref.mapint] = combined_ID_size_apriori_10(im_ref, pos_ref_dots.x, pos_ref_dots.y, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);
@@ -261,7 +270,10 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
             % ---------------------------------------------
             
             %% Dot identification
-            
+            if io.display_intermediate_progress
+                fprintf('running dot identification\n');
+            end
+
             % perform dot identification for frame 2
             [id_grad.p_matrix, id_grad.peaks, id_grad.num_p] = particle_ID(im_grad, particleIDprops);
                 
@@ -299,6 +311,10 @@ function run_dot_tracking_v5(io, id, sizing, tracking, experimental_parameters)
                 y_grad_est = y_ref;
             end
                        
+            %% Dot sizing
+            if io.display_intermediate_progress
+                fprintf('running dot sizing\n');
+            end
             % identify and size dots using their known locations on the target
             [size_grad.XYDiameter, size_grad.peaks, size_grad.mapsizeinfo, size_grad.locxy, size_grad.mapint] = combined_ID_size_apriori_10(im_grad, x_grad_est, y_grad_est, d_p+2, sizing.centroid_subpixel_fit, sizing.default_iwc, id.min_area, id.W_area, id.W_intensity, id.W_distance);
         end

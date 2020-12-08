@@ -1,4 +1,4 @@
-function calculate_camera_model_coefficients_reference_image_02(calibration_image_directory, save_calibration_data, save_camera_model, read_calibration_data, dot_diameter, dot_spacing, dot_skip, order_z) 
+function calculate_camera_model_coefficients_reference_image_02(caljob, calibration_image_directory, save_calibration_data, save_camera_model, read_calibration_data, dot_diameter, dot_spacing, dot_skip, order_z) 
 % function to calculate the camera model for a bos experiment from the
 % reference image
 %
@@ -27,17 +27,7 @@ function calculate_camera_model_coefficients_reference_image_02(calibration_imag
         calibration_data = temp_data.calibration_data;
         calibration_plane_data = temp_data.calibration_plane_data;
         calibration_data.y_pixel_number = 309;
-    else
-        % ==========================
-        % load job
-        % ==========================
-        % load sample job file and adjust parameters
-        sample_job_filename = '/scratch/shannon/c/aether/Projects/BOS/error-analysis/analysis/data/sample-job-files/sample-stereo-calibration-job.mat';
-        sample_job = load(sample_job_filename);
-
-        % extract the calibration job
-        caljob = sample_job.datasave.caljob;
-
+    else        
         % set calibration images
         [files, ~] = get_directory_listing(calibration_image_directory, 'im*.tif');
 

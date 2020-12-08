@@ -4,8 +4,6 @@ clc
 
 restoredefaultpath;
 
-dbstop if error
-
 logical_string = {'False', 'True'};
 
 % ==========================
@@ -17,7 +15,6 @@ dot_diameter = 7;
 dot_spacing = 8;
 % magnification (um/pix.)
 magnification = 10.5; %33;
-
 % size of the camera sensor (um)
 experimental_parameters.camera_design.pixel_pitch = 20.8; %20;
 % number of pixels on the camera
@@ -29,16 +26,16 @@ experimental_parameters.camera_design.y_camera_angle = 0;
 % distance between camera and the dot target (um)
 experimental_parameters.lens_design.object_distance = 10.5 * 2.54 * 10e3;
 % non-dimensional magnification
-experimental_parameters.lens_design.magnification = experimental_parameters.camera_design.pixel_pitch/magnification; %6.45/28.63; %1.3;
+experimental_parameters.lens_design.magnification = experimental_parameters.camera_design.pixel_pitch/magnification;
 % spacing between dots (um)
-experimental_parameters.bos_pattern.dot_spacing = 84; %dot_spacing * magnification; % 2*150; %2*250; %180;
+experimental_parameters.bos_pattern.dot_spacing = 84; 
 
 % ==========================
 %% Processing settings
 % ==========================
-% ------------------------------------------
+% --------------------------
 % I/O settings
-% ------------------------------------------
+% --------------------------
 io = struct;
 
 % image index starting
@@ -71,7 +68,7 @@ io.correlation_results.frame_step = 2;
 % this is the base name of the files that contain the results to be analyzed
 io.correlation_results.basename =  ['BOS*pass' num2str(io.correlation_results.pass_number) '_'];
 % display intermediate progress to user? (true/false)
-io.display_intermediate_progress = false;
+io.display_intermediate_progress = true;
 
 % ------------------------------------------
 % Standard Identification settings
@@ -122,9 +119,9 @@ sizing.centroid_subpixel_fit = 'lsg';
 % default to iwc if the gaussian fit fails? (true/false)
 sizing.default_iwc = false;
 
-% ------------------------------------------
+% -----------------------
 % Tracking settings
-% ------------------------------------------
+% -----------------------
 tracking = struct;
 % search radius for nearest neighbor search [pix.]
 tracking.search_radius = 5;
@@ -137,9 +134,9 @@ tracking.image_type = 'original';
 % initialization method for hybrid tracking ('none', 'correlation')
 tracking.initialization_method = 'none';
 
-% ------------------------------------------
+% ------------------------------------
 % Correlation Correction settings
-% ------------------------------------------
+% ------------------------------------
 % perform correlation_correction? (true/false)
 tracking.perform_correlation_correction = true;
 % correlation correction algorithm ('dcc', 'scc', 'rpc')
@@ -151,9 +148,9 @@ tracking.correlation_correction.min_sub = 1;
 % subpixel fit for the correlation plane ('tpg', 'lsg')
 tracking.correlation_correction.subpixel_fit = 'lsg';
 
-% ------------------------------------------
+% -----------------------------------
 % Validation settings
-% ------------------------------------------
+% -----------------------------------
 % perform validation? (True/False)
 tracking.perform_validation = true;
 % perform displacement thresholding? (True/False)
@@ -173,7 +170,7 @@ tracking.validation.uod_epsilon = 0.1;
 %% process images
 % ==========================
 % top read directory for this case
-current_image_directory = './sample-data/images/'; 
+current_image_directory = './sample-data/images/ordered/'; 
 current_results_directory = './sample-results/';
 
 % directory containing images
@@ -184,6 +181,7 @@ id.camera_model_directory = fullfile(current_results_directory, 'calibration');
 
 % name for this processing case
 case_name = ['id=' id.identification_method '_size=' sizing.centroid_subpixel_fit '_corr=' tracking.correlation_correction.subpixel_fit];
+
 % create directory to save results
 io.results_save_directory = fullfile(current_results_directory, case_name);
 if ~exist(io.results_save_directory, 'dir')

@@ -9,7 +9,9 @@ dbstop if error
 
 logical_string = {'False', 'True'};
 
+% ==========================
 %% experiment settings
+% ==========================
 % date of experiment
 test_date = '2019-03-22';
 % electrode gap (mm)

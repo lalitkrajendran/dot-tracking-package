@@ -28,6 +28,9 @@ function calculate_camera_model_coefficients_reference_image_02(calibration_imag
         calibration_plane_data = temp_data.calibration_plane_data;
         calibration_data.y_pixel_number = 309;
     else
+        % ==========================
+        % load job
+        % ==========================
         % load sample job file and adjust parameters
         sample_job_filename = '/scratch/shannon/c/aether/Projects/BOS/error-analysis/analysis/data/sample-job-files/sample-stereo-calibration-job.mat';
         sample_job = load(sample_job_filename);
@@ -38,6 +41,9 @@ function calculate_camera_model_coefficients_reference_image_02(calibration_imag
         % set calibration images
         [files, ~] = get_directory_listing(calibration_image_directory, 'im*.tif');
 
+        % ==========================
+        % set up calibration data structure
+        % ==========================
         num_files = 1;
         num_cameras = 1;
 
@@ -64,7 +70,7 @@ function calculate_camera_model_coefficients_reference_image_02(calibration_imag
         caljob.y_pixel_number = NR;
 
         % select control points
-        [calibration_data, calibration_plane_data]=camera_calibration_new(caljob.JOBFILE);
+        [calibration_data, calibration_plane_data] = camera_calibration_new(caljob.JOBFILE);
 
         if save_calibration_data
             % save the object and image co-ordinates of the points on the calibration
@@ -74,8 +80,9 @@ function calculate_camera_model_coefficients_reference_image_02(calibration_imag
         end
     end
 
-    %%
+    % ==========================
     % extract co-ordinates
+    % ==========================
     allx1data(:,1)   = calibration_data.x_world_full{1};        % contains all x,y,z data for camera 1
     allx1data(:,2)   = calibration_data.y_world_full{1};
     allx1data(:,3)   = calibration_data.z_world_full{1};
@@ -92,14 +99,12 @@ function calculate_camera_model_coefficients_reference_image_02(calibration_imag
     allX2data(:,1)   = calibration_data.x_image_full{1};
     allX2data(:,2)   = calibration_data.y_image_full{1};
     
-    %%
     % specify camera model
-%     order_z = 1; % cubic xy, quadratic z
     optionsls = [];
 
     % fit camera model
-    [a_cam1, a_cam2, aXcam1, aYcam1, aXcam2, aYcam2, convergemessage] = fitmodels(allx1data,...
-        allx2data,allX1data,allX2data,order_z,optionsls);
+    [a_cam1, a_cam2, aXcam1, aYcam1, aXcam2, aYcam2, convergemessage] = fitmodels(allx1data, allx2data, allX1data, allX2data, ...
+                                                                                    order_z, optionsls);
     if save_camera_model
         save_filename = ['camera_model_type=' num2str(order_z) '.mat'];
         save(fullfile(save_filepath, save_filename), 'a_cam1', 'a_cam2', 'aXcam1', 'aYcam1', 'aXcam2', 'aYcam2');

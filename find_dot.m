@@ -2,7 +2,7 @@ function dot_index = find_dot(X, Y, xmin, xmax, ymin, ymax)
 % Function to find the dot with co-ordinates in the desired interval.
 %
 % INPUTS:
-% X, Y: x, y co-ordinates of the dot
+% X, Y: x, y co-ordinates of all the dots
 % xmin, xmax: x co-ordinate interval
 % ymin, ymax: y co-ordinate interval
 %   

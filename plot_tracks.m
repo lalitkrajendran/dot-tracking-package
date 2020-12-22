@@ -46,7 +46,8 @@ function plot_tracks(tracks, scale_factor, plot_corrected_tracks, plot_validated
     
     % plot displacements    
     quiver(X_track, Y_track, U_track * scale_factor, V_track * scale_factor, 'autoscale', 'off')
+    set_axes(gca);
     annotate_image(gcf, gca);
-    
+
     h = gcf;
 end

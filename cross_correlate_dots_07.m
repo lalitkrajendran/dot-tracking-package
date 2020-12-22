@@ -120,8 +120,17 @@ function [Uc, Vc, Cp] = cross_correlate_dots_07(im1, im2, size_1, size_2, track,
     Uc_image = c_min_2 - c_min_1 + Uc;
     Vc_image = r_min_2 - r_min_1 + Vc;
     
+    % discard correlation correction result if more than 1 pixel different from subtraction result
+    Uc_track = track(2) - track(1);
+    if abs(Uc_image - Uc_track) > 0.5
+        Uc_image = Uc_track;
+    end
+    Vc_track = track(4) - track(3);
+    if abs(Vc_image - Vc_track) > 0.5
+        Vc_image = Vc_track;
+    end        
+    
     % assign values to be returned by the function
     Uc = Uc_image;
     Vc = Vc_image;
-
 end
